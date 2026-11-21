@@ -150,8 +150,8 @@
         z-index: 15;
         touch-action: pan-y;
       }
-      #wardrobe-head { display: flex; align-items: center; gap: 12px; }
-      #wardrobe-title { font-size: 18px; font-weight: bold; }
+      #wardrobe-head, #decorate-head { display: flex; align-items: center; gap: 12px; }
+      #wardrobe-title, #decorate-title { font-size: 18px; font-weight: bold; }
       #wardrobe-preview {
         width: 96px;
         height: 96px;
@@ -159,7 +159,7 @@
         background: #33503a;
         border-radius: 8px;
       }
-      #wardrobe-body {
+      #wardrobe-body, #decorate-body {
         flex: 1;
         overflow-y: auto;
         display: flex;
@@ -188,9 +188,9 @@
         cursor: pointer;
       }
       .w-swatch.selected { border-color: #fff; box-shadow: 0 0 0 2px #5cb85c; }
-      #wardrobe-error { margin: 0; min-height: 16px; font-size: 13px; color: #ffb3b3; }
-      #wardrobe-actions { display: flex; gap: 8px; }
-      #wardrobe-actions button {
+      #wardrobe-error, #decorate-error { margin: 0; min-height: 16px; font-size: 13px; color: #ffb3b3; }
+      #wardrobe-actions, #decorate-actions { display: flex; gap: 8px; }
+      #wardrobe-actions button, #decorate-actions button {
         flex: 1;
         padding: 10px;
         border-radius: 8px;
@@ -198,9 +198,9 @@
         font-weight: bold;
         cursor: pointer;
       }
-      #wardrobe-save { background: #5cb85c; color: #fff; }
-      #wardrobe-save:disabled { opacity: 0.6; cursor: default; }
-      #wardrobe-cancel { background: #4a4a4a; color: #fff; }
+      #wardrobe-save, #decorate-save { background: #5cb85c; color: #fff; }
+      #wardrobe-save:disabled, #decorate-save:disabled { opacity: 0.6; cursor: default; }
+      #wardrobe-cancel, #decorate-cancel { background: #4a4a4a; color: #fff; }
       @media (max-width: 700px) {
         .side-panel {
           top: auto;
@@ -213,6 +213,9 @@
         }
       }
 
+      .d-opt { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; min-width: 64px; }
+      .d-opt canvas { width: 48px; height: 32px; image-rendering: pixelated; }
+      #decorate-btn { display: none; }
       /* Locked wardrobe options */
       .w-btn.locked, .w-swatch.locked { opacity: 0.4; }
 
@@ -362,6 +365,8 @@
       <button id="claim-btn" type="button">Claim daily reward</button>
       <button id="shop-btn" type="button">Shop</button>
       <button id="wardrobe-btn" type="button">Wardrobe</button>
+      <button id="place-btn" type="button">Home</button>
+      <button id="decorate-btn" type="button">Decorate</button>
       <button id="logout" type="button">Log out</button>
     </div>
 
@@ -387,6 +392,18 @@
       <div id="wardrobe-actions">
         <button id="wardrobe-cancel" type="button">Cancel</button>
         <button id="wardrobe-save" type="button">Save</button>
+      </div>
+    </div>
+
+    <div id="decorate" class="side-panel">
+      <div id="decorate-head">
+        <div id="decorate-title">Decorate your room</div>
+      </div>
+      <div id="decorate-body"></div>
+      <p id="decorate-error"></p>
+      <div id="decorate-actions">
+        <button id="decorate-cancel" type="button">Cancel</button>
+        <button id="decorate-save" type="button">Save</button>
       </div>
     </div>
 

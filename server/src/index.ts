@@ -25,8 +25,9 @@ const gameServer = new Server({
   transport: new WebSocketTransport({ server }),
 });
 
-// One shared town that everyone joins
+// One shared town that everyone joins, and one home per player (matched by owner)
 gameServer.define('town', TownRoom);
+gameServer.define('home', TownRoom).filterBy(['owner']);
 
 gameServer.listen(port).then(() => {
   console.log('DigiCommune server listening on port ' + port);

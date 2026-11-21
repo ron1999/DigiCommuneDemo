@@ -1,12 +1,15 @@
 import { supabase } from './supabase';
 import type { Avatar } from './avatar/avatar';
 
+export type ItemCategory = keyof Avatar | 'furniture' | 'roomTemplate';
+
 export interface ShopItem {
   id: string;
-  category: keyof Avatar;
+  category: ItemCategory;
   option_index: number;
   name: string;
   price: number; // 0 = free for everyone
+  slot_type: string | null; // furniture only: which room slot it fits
 }
 
 export interface EconomyState {
@@ -42,13 +45,13 @@ export function canClaimToday(): boolean {
   return s.lastClaimDate !== todayKey();
 }
 
-export function itemFor(category: keyof Avatar, index: number): ShopItem | undefined {
+export function itemFor(category: ItemCategory, index: number): ShopItem | undefined {
   return economy.state?.items.find((i) => i.category === category && i.option_index === index);
 }
 
 // Free items, or items this player has bought. Before the data loads we say yes;
 // the database re-checks everything when you save.
-export function isUnlocked(category: keyof Avatar, index: number): boolean {
+export function isUnlocked(category: ItemCategory, index: number): boolean {
   const s = economy.state;
   if (!s) return true;
   const item = itemFor(category, index);
@@ -67,7 +70,7 @@ export async function loadEconomy(): Promise<void> {
     supabase.from('inventory').select('item_id').eq('user_id', uid),
     supabase
       .from('items')
-      .select('id, category, option_index, name, price')
+      .select('id, category, option_index, name, price, slot_type')
       .order('category')
       .order('option_index'),
   ]);
@@ -103,4 +106,17 @@ export async function buyItem(itemId: string): Promise<void> {
   const { error } = await supabase.rpc('buy_item', { p_item_id: itemId });
   if (error) throw new Error(error.message);
   await loadEconomy();
+}
+
+// Same as isUnlocked, by item id (furniture and room templates use ids)
+export function isItemUnlocked(itemId: string): boolean {
+  const s = economy.state;
+  if (!s) return true;
+  const item = s.items.find((i) => i.id === itemId);
+  if (!item) return true;
+  return item.price === 0 || s.owned.has(item.id);
+}
+
+export function itemById(itemId: string): ShopItem | undefined {
+  return economy.state?.items.find((i) => i.id === itemId);
 }

@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { TILE_SIZE } from '../config';
+import { TILE_COUNT } from './townMap';
 
 // Draws simple placeholder art in code so the prototype needs no image files.
 // Later we will replace this with real tileset images (AI-generated art + Tiled).
@@ -72,16 +73,51 @@ export function createTilesetTexture(scene: Phaser.Scene): void {
   g.fillCircle(ox + 10, 12, 1);
   g.fillCircle(ox + 22, 20, 1);
 
-  g.generateTexture('tiles-design', S * 7, S);
+  // 7 wood floor
+  ox = S * 7;
+  g.fillStyle(0xb98a5a, 1).fillRect(ox, 0, S, S);
+  g.fillStyle(0xa27648, 1);
+  for (let r = 0; r < 4; r++) g.fillRect(ox, r * 8 + 7, S, 1);
+  g.fillRect(ox + 10, 0, 1, 8);
+  g.fillRect(ox + 24, 8, 1, 8);
+  g.fillRect(ox + 6, 16, 1, 8);
+  g.fillRect(ox + 20, 24, 1, 8);
+
+  // 8 tile floor
+  ox = S * 8;
+  g.fillStyle(0xdfe6e9, 1).fillRect(ox, 0, S, S);
+  g.fillStyle(0xb2bec3, 1);
+  g.fillRect(ox + 15, 0, 2, S);
+  g.fillRect(ox, 15, S, 2);
+
+  // 9 carpet
+  ox = S * 9;
+  g.fillStyle(0x8e6fb0, 1).fillRect(ox, 0, S, S);
+  g.fillStyle(0x9d80bd, 1);
+  for (let i = 0; i < 4; i++) g.fillRect(ox + i * 8 + 2, ((i * 13) % 28) + 2, 2, 2);
+
+  // 10 room wall
+  ox = S * 10;
+  g.fillStyle(0xe8d9c0, 1).fillRect(ox, 0, S, S);
+  g.fillStyle(0xd4c1a1, 1).fillRect(ox, 24, S, 8);
+  g.fillStyle(0x9c7a55, 1).fillRect(ox, 22, S, 2);
+
+  // 11 doormat (exit)
+  ox = S * 11;
+  g.fillStyle(0xb98a5a, 1).fillRect(ox, 0, S, S);
+  g.fillStyle(0x8a3b2a, 1).fillRect(ox + 4, 8, 24, 18);
+  g.fillStyle(0xc9643f, 1).fillRect(ox + 6, 10, 20, 14);
+
+  g.generateTexture('tiles-design', S * TILE_COUNT, S);
   g.destroy();
 
   // Scale up to the real tile size without blurring
   const scale = TILE_SIZE / DESIGN_SIZE;
   const src = scene.textures.get('tiles-design').getSourceImage() as HTMLImageElement | HTMLCanvasElement;
-  const canvas = scene.textures.createCanvas('tiles', S * 7 * scale, S * scale)!;
+  const canvas = scene.textures.createCanvas('tiles', S * TILE_COUNT * scale, S * scale)!;
   const ctx = canvas.getContext();
   ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(src, 0, 0, S * 7 * scale, S * scale);
+  ctx.drawImage(src, 0, 0, S * TILE_COUNT * scale, S * scale);
   canvas.refresh();
   scene.textures.remove('tiles-design');
 }

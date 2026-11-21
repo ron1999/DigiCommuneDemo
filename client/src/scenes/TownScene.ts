@@ -1,21 +1,28 @@
 import Phaser from 'phaser';
 import type { Room } from 'colyseus.js';
-import {
-  CAMERA_ZOOM,
-  MAP_H,
-  MAP_W,
-  PLAYER_SPEED,
-  TILE_SIZE,
-} from '../config';
-import { BLOCKED_TILES, SPAWN, buildTownMap } from '../world/townMap';
+import { CAMERA_ZOOM, MAP_H, MAP_W, PLAYER_SPEED, TILE_SIZE } from '../config';
+import { BLOCKED_TILES, SPAWN, T, buildTownMap } from '../world/townMap';
 import { createTilesetTexture } from '../world/tileset';
+import { createFurnitureTextures, furnitureTextureKey } from '../world/furniture';
+import {
+  SLOT_SIZE,
+  WALKABLE_SLOTS,
+  buildRoomMap,
+  furnitureById,
+  roomSpawn,
+  templateById,
+} from '../world/rooms';
+import type { RoomLayout } from '../world/rooms';
 import { NameTag } from '../entities/NameTag';
 import { RemotePlayer } from '../entities/RemotePlayer';
-import { connectToTown } from '../net/network';
-import type { PlayerInfo } from '../net/network';
+import { connectToPlace } from '../net/network';
+import type { Place, PlayerInfo } from '../net/network';
 import { chat } from '../ui/chat';
 import { wardrobe } from '../ui/wardrobe';
+import { cancelDecorate, decorate, openDecorate } from '../ui/decorate';
+import { toast } from '../ui/hud';
 import { getAccessToken, logOut, saveAvatar } from '../auth';
+import { loadMyRoom, myUserId, saveMyRoom } from '../room';
 import { session } from '../session';
 import { animateCharacter, ensureAvatarTexture, setupCharacterSprite } from '../avatar/textures';
 import { FEET_Y } from '../avatar/sprites';
@@ -27,16 +34,34 @@ export interface JoystickState {
   y: number;
 }
 
+// What the scene is started with. Travelling between places restarts the scene with new data.
+export interface PlaceData {
+  place?: Place;
+  room?: RoomLayout; // for homes: what the room looks like
+  spawn?: { x: number; y: number }; // tile to appear on (town only)
+}
+
 const SEND_INTERVAL_MS = 66; // about 15 position updates per second
 const KICKED_CODE = 4001; // the server uses this when the same account logs in elsewhere
 
+const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+
 export class TownScene extends Phaser.Scene {
+  private place: Place = { kind: 'town' };
+  private layout: RoomLayout | null = null; // homes only
+
   private player!: Phaser.Physics.Arcade.Sprite;
   private playerKey = '';
   private facing: Direction = 'down';
   private localTag!: NameTag;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private wasd!: Record<string, Phaser.Input.Keyboard.Key>;
+
+  private map: Phaser.Tilemaps.Tilemap | null = null;
+  private layer: Phaser.Tilemaps.TilemapLayer | null = null;
+  private furniture: Phaser.Physics.Arcade.StaticGroup | null = null; // furniture you bump into
+  private decor: Phaser.GameObjects.Image[] = []; // rugs and wall art (no collision)
+  private colliders: Phaser.Physics.Arcade.Collider[] = [];
 
   private room: Room | null = null;
   private remotes = new Map<string, RemotePlayer>();
@@ -48,6 +73,10 @@ export class TownScene extends Phaser.Scene {
   private connecting = false;
   private kicked = false;
   private shuttingDown = false;
+  private travelling = false;
+
+  // Where to put you back in town when you leave your home (the door you came in by)
+  private static townReturn: { x: number; y: number } | null = null;
 
   // Phones pause pages in the background and drop the connection; reconnect when back.
   private onVisible = (): void => {
@@ -58,46 +87,45 @@ export class TownScene extends Phaser.Scene {
     super('TownScene');
   }
 
-  create(): void {
+  create(data: PlaceData = {}): void {
+    // The scene object is reused when travelling, so reset everything
+    this.place = data.place ?? { kind: 'town' };
+    this.layout = this.place.kind === 'home' ? (data.room ?? null) : null;
+    this.room = null;
+    this.remotes = new Map();
+    this.reconnectAttempts = 0;
+    this.connecting = false;
+    this.kicked = false;
+    this.shuttingDown = false;
+    this.travelling = false;
+    this.facing = 'down';
+    this.map = null;
+    this.layer = null;
+    this.furniture = null;
+    this.decor = [];
+    this.colliders = [];
+
     createTilesetTexture(this);
-
-    // Build the tile map from data
-    const map = this.make.tilemap({
-      data: buildTownMap(),
-      tileWidth: TILE_SIZE,
-      tileHeight: TILE_SIZE,
-    });
-    const tileset = map.addTilesetImage('tiles', 'tiles', TILE_SIZE, TILE_SIZE, 0, 0)!;
-    const layer = map.createLayer(0, tileset, 0, 0)!;
-    layer.setCollision(BLOCKED_TILES);
-
-    const worldW = MAP_W * TILE_SIZE;
-    const worldH = MAP_H * TILE_SIZE;
-    this.physics.world.setBounds(0, 0, worldW, worldH);
+    createFurnitureTextures(this);
 
     // Local player, drawn with the saved look. Its position is where its feet are.
     this.playerKey = ensureAvatarTexture(this, session.avatar);
-    this.player = this.physics.add.sprite(
-      SPAWN.x * TILE_SIZE + TILE_SIZE / 2,
-      SPAWN.y * TILE_SIZE + TILE_SIZE / 2,
-      this.playerKey,
-      0,
-    );
+    this.player = this.physics.add.sprite(0, 0, this.playerKey, 0);
     setupCharacterSprite(this.player);
     this.player.setCollideWorldBounds(true);
     // Collision box: a small area around the feet, so you can walk in front of walls
     const body = this.player.body as Phaser.Physics.Arcade.Body;
     body.setSize(36, 16);
     body.setOffset(46, FEET_Y - 14);
-    this.physics.add.collider(this.player, layer);
     this.localTag = new NameTag(this, session.name);
 
-    // Camera
+    this.buildPlace(data.spawn);
+
     const cam = this.cameras.main;
-    cam.setBounds(0, 0, worldW, worldH);
     cam.startFollow(this.player, true, 0.12, 0.12);
     cam.setZoom(CAMERA_ZOOM);
     cam.roundPixels = true;
+    cam.setBackgroundColor(this.place.kind === 'home' ? '#2a211b' : '#1d2b1d');
 
     // Keyboard: arrow keys and WASD
     const keyboard = this.input.keyboard!;
@@ -124,11 +152,24 @@ export class TownScene extends Phaser.Scene {
       if (token) this.room?.send('avatar', { token });
     };
 
+    // Decorate (homes only): preview furniture right away, save on Save
+    decorate.iconFor = (id) => {
+      const f = furnitureById(id);
+      return f ? (this.textures.get(furnitureTextureKey(f)).getSourceImage() as HTMLCanvasElement) : null;
+    };
+    decorate.onPreview = (layout) => this.applyLayout(layout);
+    decorate.onSave = async (layout) => {
+      const saved = await saveMyRoom(layout);
+      this.applyLayout(saved);
+      toast('Room saved!');
+    };
+
+    this.setupTopbar();
+
     // Shared state for the UI overlay
-    const joy: JoystickState = { x: 0, y: 0 };
-    this.registry.set('joy', joy);
+    if (!this.registry.has('joy')) this.registry.set('joy', { x: 0, y: 0 } as JoystickState);
     this.registry.set('status', 'Connecting...');
-    this.scene.launch('UIScene');
+    if (!this.scene.isActive('UIScene')) this.scene.launch('UIScene');
 
     document.addEventListener('visibilitychange', this.onVisible);
 
@@ -139,11 +180,167 @@ export class TownScene extends Phaser.Scene {
       chat.onSend = null;
       wardrobe.onPreview = null;
       wardrobe.onSave = null;
-      this.room?.leave();
+      decorate.onPreview = null;
+      decorate.onSave = null;
+      const room = this.room;
+      this.room = null;
+      room?.leave();
     });
 
     void this.connect();
   }
+
+  // ---------- building the town or a room ----------
+
+  private placeSize(): { w: number; h: number } {
+    if (this.place.kind === 'home' && this.layout) {
+      const t = templateById(this.layout.template);
+      return { w: t.w, h: t.h };
+    }
+    return { w: MAP_W, h: MAP_H };
+  }
+
+  // (Re)builds the tiles and furniture, and puts the player on the spawn tile
+  private buildPlace(spawn?: { x: number; y: number }): void {
+    this.colliders.forEach((c) => c.destroy());
+    this.colliders = [];
+    this.layer?.destroy();
+    this.map?.destroy();
+    this.clearFurniture();
+
+    const isHome = this.place.kind === 'home' && this.layout;
+    const template = isHome ? templateById(this.layout!.template) : null;
+    const data = template ? buildRoomMap(template) : buildTownMap();
+
+    this.map = this.make.tilemap({ data, tileWidth: TILE_SIZE, tileHeight: TILE_SIZE });
+    const tileset = this.map.addTilesetImage('tiles', 'tiles', TILE_SIZE, TILE_SIZE, 0, 0)!;
+    this.layer = this.map.createLayer(0, tileset, 0, 0)!;
+    this.layer.setCollision(BLOCKED_TILES);
+
+    const size = this.placeSize();
+    const worldW = size.w * TILE_SIZE;
+    const worldH = size.h * TILE_SIZE;
+    this.physics.world.setBounds(0, 0, worldW, worldH);
+    // The town scrolls with you; small rooms just stay centred
+    if (isHome) this.cameras.main.removeBounds();
+    else this.cameras.main.setBounds(0, 0, worldW, worldH);
+
+    this.furniture = this.physics.add.staticGroup();
+    if (template) this.placeFurniture();
+
+    const tile = spawn ?? (template ? roomSpawn(template) : SPAWN);
+    this.player.setPosition(tile.x * TILE_SIZE + TILE_SIZE / 2, tile.y * TILE_SIZE + TILE_SIZE / 2);
+    this.player.setVelocity(0, 0);
+
+    this.colliders.push(this.physics.add.collider(this.player, this.layer));
+    this.colliders.push(this.physics.add.collider(this.player, this.furniture));
+  }
+
+  private placeFurniture(): void {
+    if (!this.layout || !this.furniture) return;
+    const template = templateById(this.layout.template);
+    for (const slot of template.slots) {
+      const f = furnitureById(this.layout.slots[slot.name]);
+      if (!f) continue;
+      const size = SLOT_SIZE[f.type];
+      const x = slot.x * TILE_SIZE;
+      const y = slot.y * TILE_SIZE;
+
+      if (WALKABLE_SLOTS.includes(f.type)) {
+        // Rugs and wall art: just a picture, drawn under the players
+        this.decor.push(this.add.image(x, y, furnitureTextureKey(f)).setOrigin(0, 0).setDepth(1));
+      } else {
+        const img = this.furniture.create(x, y, furnitureTextureKey(f)) as Phaser.Physics.Arcade.Image;
+        img.setOrigin(0, 0).refreshBody();
+        // Sort with players by the furniture's bottom edge, so you can stand in front of it
+        img.setDepth(y + size.h * TILE_SIZE);
+      }
+    }
+  }
+
+  // Shows a different room layout (Decorate preview or after saving)
+  private applyLayout(layout: RoomLayout): void {
+    if (this.place.kind !== 'home') return;
+    const templateChanged = !this.layout || this.layout.template !== layout.template;
+    this.layout = layout;
+    if (templateChanged) {
+      this.buildPlace();
+      this.sendPosition(true);
+    } else {
+      this.clearFurniture();
+      this.placeFurniture();
+    }
+  }
+
+  private clearFurniture(): void {
+    this.furniture?.clear(true, true);
+    this.decor.forEach((d) => d.destroy());
+    this.decor = [];
+  }
+
+  // ---------- travelling between the town and your home ----------
+
+  private setupTopbar(): void {
+    const placeBtn = $<HTMLButtonElement>('place-btn');
+    const decorateBtn = $<HTMLButtonElement>('decorate-btn');
+    const atHome = this.place.kind === 'home';
+    placeBtn.textContent = atHome ? 'Town' : 'Home';
+    placeBtn.onclick = () => (atHome ? this.goToTown() : void this.goHome());
+    decorateBtn.style.display = atHome ? 'inline-block' : 'none';
+    decorateBtn.onclick = () => {
+      if (this.layout) openDecorate(this.layout);
+    };
+  }
+
+  private async goHome(returnTile?: { x: number; y: number }): Promise<void> {
+    if (this.travelling) return;
+    this.travelling = true;
+    this.player.setVelocity(0, 0);
+    this.registry.set('status', 'Going home...');
+    try {
+      const [owner, room] = await Promise.all([myUserId(), loadMyRoom()]);
+      TownScene.townReturn = returnTile ?? this.currentTile();
+      this.scene.restart({ place: { kind: 'home', owner }, room } satisfies PlaceData);
+    } catch (err) {
+      console.error('Could not load your room', err);
+      toast('Could not load your room: ' + (err as Error).message);
+      this.travelling = false;
+      this.updateStatus();
+    }
+  }
+
+  private goToTown(): void {
+    if (this.travelling) return;
+    this.travelling = true;
+    cancelDecorate();
+    this.scene.restart({ place: { kind: 'town' }, spawn: TownScene.townReturn ?? undefined } satisfies PlaceData);
+  }
+
+  private currentTile(): { x: number; y: number } {
+    return {
+      x: Math.floor(this.player.x / TILE_SIZE),
+      y: Math.floor(this.player.y / TILE_SIZE),
+    };
+  }
+
+  // Walking onto a door goes home; walking onto the doormat at home goes back to town
+  private checkDoors(): void {
+    if (this.travelling || !this.layer) return;
+    const { x, y } = this.currentTile();
+    const tile = this.layer.getTileAt(x, y);
+    if (!tile) return;
+
+    if (this.place.kind === 'town' && tile.index === T.DOOR) {
+      // Come back out on the walkable side of this door
+      const below = this.layer.getTileAt(x, y + 1);
+      const out = below && !BLOCKED_TILES.includes(below.index) ? { x, y: y + 1 } : { x, y: y - 1 };
+      void this.goHome(out);
+    } else if (this.place.kind === 'home' && tile.index === T.DOORMAT) {
+      this.goToTown();
+    }
+  }
+
+  // ---------- networking ----------
 
   private async connect(): Promise<void> {
     if (this.connecting || this.room || this.kicked || this.shuttingDown) return;
@@ -153,39 +350,52 @@ export class TownScene extends Phaser.Scene {
     try {
       const token = await getAccessToken();
       if (!token) throw Object.assign(new Error('Not logged in'), { code: 401 });
-      const room = await connectToTown(token);
+      const room = await connectToPlace(token, this.place);
+
+      // The player may have left this place while we were connecting
+      if (this.shuttingDown) {
+        room.leave();
+        return;
+      }
 
       // Start fresh: the server tells us who is here
       this.clearRemotes();
       this.room = room;
       this.reconnectAttempts = 0;
 
+      // Ignore anything from a connection we've already replaced
+      const current = () => this.room === room;
+
       room.onMessage('init', (data: { id: string; players: PlayerInfo[] }) => {
+        if (!current()) return;
         data.players.forEach((p) => this.addRemote(p));
         this.updateStatus();
       });
       room.onMessage('joined', (p: PlayerInfo) => {
+        if (!current()) return;
         this.addRemote(p);
         this.updateStatus();
       });
       room.onMessage('moved', (m: { id: string; x: number; y: number }) => {
-        this.remotes.get(m.id)?.setTarget(m.x, m.y);
+        if (current()) this.remotes.get(m.id)?.setTarget(m.x, m.y);
       });
       room.onMessage('avatar', (m: { id: string; avatar: Avatar }) => {
-        this.remotes.get(m.id)?.setAvatar(m.avatar);
+        if (current()) this.remotes.get(m.id)?.setAvatar(m.avatar);
       });
       room.onMessage('chat', (m: { id: string; text: string }) => {
+        if (!current()) return;
         if (m.id === room.sessionId) this.localTag.say(m.text);
         else this.remotes.get(m.id)?.tag.say(m.text);
       });
       room.onMessage('left', (m: { id: string }) => {
+        if (!current()) return;
         this.remotes.get(m.id)?.destroy();
         this.remotes.delete(m.id);
         this.updateStatus();
       });
       room.onLeave((code: number) => {
-        if (this.shuttingDown) return;
-        if (this.room === room) this.room = null;
+        if (this.shuttingDown || !current()) return;
+        this.room = null;
         this.clearRemotes();
         if (code === KICKED_CODE) {
           this.kicked = true;
@@ -195,11 +405,8 @@ export class TownScene extends Phaser.Scene {
         this.scheduleReconnect();
       });
 
-      // Tell the server where we really are (it starts everyone at the town centre),
-      // then ask who is already here.
-      this.lastSentX = this.player.x;
-      this.lastSentY = this.player.y;
-      room.send('move', { x: Math.round(this.player.x), y: Math.round(this.player.y) });
+      // Tell the server where we really are, then ask who is already here.
+      this.sendPosition(true);
       room.send('ready');
       this.updateStatus();
     } catch (err) {
@@ -212,7 +419,7 @@ export class TownScene extends Phaser.Scene {
         return;
       }
       const msg = (err as { message?: string }).message;
-      if (code === 500 && msg) {
+      if ((code === 500 || code === 403) && msg) {
         this.registry.set('status', 'Server error: ' + msg);
       } else if (code === 'TIMEOUT') {
         this.scheduleReconnect('No reply from server');
@@ -222,6 +429,16 @@ export class TownScene extends Phaser.Scene {
     } finally {
       this.connecting = false;
     }
+  }
+
+  private sendPosition(force = false): void {
+    if (!this.room) return;
+    const moved =
+      Math.abs(this.player.x - this.lastSentX) > 0.5 || Math.abs(this.player.y - this.lastSentY) > 0.5;
+    if (!moved && !force) return;
+    this.lastSentX = this.player.x;
+    this.lastSentY = this.player.y;
+    this.room.send('move', { x: Math.round(this.player.x), y: Math.round(this.player.y) });
   }
 
   private scheduleReconnect(reason?: string): void {
@@ -243,23 +460,26 @@ export class TownScene extends Phaser.Scene {
   }
 
   private updateStatus(): void {
-    this.registry.set('status', session.name + ' | Online: ' + (this.remotes.size + 1));
+    const where = this.place.kind === 'home' ? 'Your room' : 'Town';
+    this.registry.set('status', session.name + ' | ' + where + ' | Online: ' + (this.remotes.size + 1));
   }
 
   update(time: number): void {
     let vx = 0;
     let vy = 0;
 
-    if (this.cursors.left.isDown || this.wasd.A.isDown) vx -= 1;
-    if (this.cursors.right.isDown || this.wasd.D.isDown) vx += 1;
-    if (this.cursors.up.isDown || this.wasd.W.isDown) vy -= 1;
-    if (this.cursors.down.isDown || this.wasd.S.isDown) vy += 1;
+    if (!this.travelling) {
+      if (this.cursors.left.isDown || this.wasd.A.isDown) vx -= 1;
+      if (this.cursors.right.isDown || this.wasd.D.isDown) vx += 1;
+      if (this.cursors.up.isDown || this.wasd.W.isDown) vy -= 1;
+      if (this.cursors.down.isDown || this.wasd.S.isDown) vy += 1;
 
-    // Touch joystick overrides keyboard while it is being used
-    const joy = this.registry.get('joy') as JoystickState | undefined;
-    if (joy && (joy.x !== 0 || joy.y !== 0)) {
-      vx = joy.x;
-      vy = joy.y;
+      // Touch joystick overrides keyboard while it is being used
+      const joy = this.registry.get('joy') as JoystickState | undefined;
+      if (joy && (joy.x !== 0 || joy.y !== 0)) {
+        vx = joy.x;
+        vy = joy.y;
+      }
     }
 
     // Keep diagonal movement from being faster
@@ -276,20 +496,11 @@ export class TownScene extends Phaser.Scene {
 
     // Tell the server where we are (only when we moved)
     if (this.room && time - this.lastSentAt > SEND_INTERVAL_MS) {
-      const moved =
-        Math.abs(this.player.x - this.lastSentX) > 0.5 ||
-        Math.abs(this.player.y - this.lastSentY) > 0.5;
-      if (moved) {
-        this.lastSentX = this.player.x;
-        this.lastSentY = this.player.y;
-        this.lastSentAt = time;
-        this.room.send('move', {
-          x: Math.round(this.player.x),
-          y: Math.round(this.player.y),
-        });
-      }
+      this.lastSentAt = time;
+      this.sendPosition();
     }
 
     this.remotes.forEach((r) => r.update());
+    if (vx !== 0 || vy !== 0) this.checkDoors();
   }
 }

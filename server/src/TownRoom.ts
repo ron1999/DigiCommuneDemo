@@ -4,10 +4,9 @@ import { sanitizeAvatar, type Avatar } from './avatar';
 
 // Must match the client's map size (40 x 30 tiles of 64px, client/src/config.ts) and spawn point.
 const TILE = 64;
-const WORLD_W = 40 * TILE;
-const WORLD_H = 30 * TILE;
-const SPAWN_X = 20 * TILE;
-const SPAWN_Y = 15 * TILE;
+const TOWN = { w: 40 * TILE, h: 30 * TILE, spawnX: 20 * TILE, spawnY: 15 * TILE };
+// Homes: big enough for the largest room template (MAX_ROOM_W/H in client/src/world/rooms.ts)
+const HOME = { w: 12 * TILE, h: 9 * TILE, spawnX: 6 * TILE, spawnY: 7 * TILE };
 
 const MAX_CHAT_LENGTH = 120;
 const CHAT_COOLDOWN_MS = 800;
@@ -26,8 +25,15 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
+// One class runs both kinds of place:
+//  - 'town': the shared town everyone joins
+//  - 'home': one per player (options.owner = their account id). For now only the owner may enter;
+//    visiting friends' rooms comes later.
 export class TownRoom extends Room {
   maxClients = 100;
+
+  private ownerId: string | null = null; // set for homes
+  private bounds = TOWN;
 
   private players = new Map<string, PlayerData>(); // by session id
   private sessionByUser = new Map<string, string>(); // account id -> session id
@@ -59,19 +65,29 @@ export class TownRoom extends Room {
       console.log('Join rejected: invalid or expired login token');
       throw new ServerError(401, 'Invalid or expired login');
     }
+    if (this.ownerId && user.id !== this.ownerId) {
+      console.log('Join rejected: ' + user.username + ' tried to enter someone else\'s room');
+      throw new ServerError(403, 'That room is private');
+    }
     console.log('Login OK for ' + user.username);
     return user;
   }
 
-  onCreate(): void {
+  onCreate(options: any): void {
+    if (typeof options?.owner === 'string' && options.owner) {
+      this.ownerId = options.owner;
+      this.bounds = HOME;
+      this.maxClients = 20;
+    }
+
     // Client reports where it moved to (about 15 times per second while walking)
     this.onMessage('move', (client: Client, message: any) => {
       const p = this.players.get(client.sessionId);
       if (!p) return;
       if (!Number.isFinite(message?.x) || !Number.isFinite(message?.y)) return;
 
-      p.x = clamp(message.x, 0, WORLD_W);
-      p.y = clamp(message.y, 0, WORLD_H);
+      p.x = clamp(message.x, 0, this.bounds.w);
+      p.y = clamp(message.y, 0, this.bounds.h);
       this.broadcast('moved', { id: p.id, x: p.x, y: p.y }, { except: client });
     });
 
@@ -140,8 +156,8 @@ export class TownRoom extends Room {
     const player: PlayerData = {
       id: client.sessionId,
       name: auth.username,
-      x: SPAWN_X,
-      y: SPAWN_Y,
+      x: this.bounds.spawnX,
+      y: this.bounds.spawnY,
       avatar: sanitizeAvatar(auth.avatar),
     };
     this.players.set(client.sessionId, player);

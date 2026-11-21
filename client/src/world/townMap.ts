@@ -9,10 +9,18 @@ export const T = {
   WALL: 4,
   DOOR: 5,
   FLOWER: 6,
+  // Room interiors
+  FLOOR_WOOD: 7,
+  FLOOR_TILE: 8,
+  FLOOR_CARPET: 9,
+  ROOM_WALL: 10,
+  DOORMAT: 11,
 } as const;
 
+export const TILE_COUNT = 12;
+
 // Tiles the player cannot walk through.
-export const BLOCKED_TILES: number[] = [T.WATER, T.TREE, T.WALL];
+export const BLOCKED_TILES: number[] = [T.WATER, T.TREE, T.WALL, T.ROOM_WALL];
 
 // Tile coordinates where new players appear (centre of the town crossroads).
 export const SPAWN = { x: 20, y: 15 };

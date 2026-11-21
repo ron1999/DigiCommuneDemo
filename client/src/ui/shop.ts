@@ -1,5 +1,7 @@
 import { CATEGORIES } from '../avatar/avatar';
 import { buyItem, economy, onEconomyChange } from '../economy';
+import type { ItemCategory } from '../economy';
+import { cancelDecorate } from './decorate';
 import { toast } from './hud';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -21,7 +23,14 @@ function render(): void {
   }
   balanceEl.textContent = 'Coins: ' + s.balance;
 
-  for (const cat of CATEGORIES) {
+  // Clothes first, then things for your room
+  const sections: { key: ItemCategory; label: string; colors?: number[] }[] = [
+    ...CATEGORIES,
+    { key: 'roomTemplate', label: 'Rooms' },
+    { key: 'furniture', label: 'Furniture' },
+  ];
+
+  for (const cat of sections) {
     const items = s.items.filter((i) => i.category === cat.key && i.price > 0);
     if (items.length === 0) continue;
 
@@ -62,7 +71,11 @@ function render(): void {
         errorEl.textContent = '';
         try {
           await buyItem(item.id);
-          toast('Bought ' + item.name + '! Find it in your Wardrobe.');
+          const where =
+            item.category === 'furniture' || item.category === 'roomTemplate'
+              ? 'Go Home and press Decorate.'
+              : 'Find it in your Wardrobe.';
+          toast('Bought ' + item.name + '! ' + where);
         } catch (err) {
           errorEl.textContent = (err as Error).message;
           btn.disabled = false;
@@ -80,6 +93,7 @@ function render(): void {
 export function openShop(): void {
   // Close the wardrobe first (this also puts the character's look back)
   if ($('wardrobe').style.display === 'flex') $('wardrobe-cancel').click();
+  cancelDecorate();
   errorEl.textContent = '';
   render();
   panel.style.display = 'flex';

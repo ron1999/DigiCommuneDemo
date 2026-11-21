@@ -2,6 +2,7 @@ import { CATEGORIES } from '../avatar/avatar';
 import { drawAvatarPreview } from '../avatar/sprites';
 import type { Avatar } from '../avatar/avatar';
 import { isUnlocked, itemFor, onEconomyChange } from '../economy';
+import { cancelDecorate } from './decorate';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -109,6 +110,7 @@ export function openWardrobe(initial: Avatar, firstTime = false): void {
   title.textContent = firstTime ? 'Create your character' : 'Wardrobe';
   errorText.textContent = '';
   $('shop').style.display = 'none';
+  cancelDecorate();
   panel.style.display = 'flex';
   refreshSelection();
   refreshLocks();

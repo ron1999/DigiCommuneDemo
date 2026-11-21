@@ -1,6 +1,9 @@
 import { Client, Room } from 'colyseus.js';
 import type { Avatar } from '../avatar/avatar';
 
+// Where a player is: the shared town, or someone's home (by account id)
+export type Place = { kind: 'town' } | { kind: 'home'; owner: string };
+
 export interface PlayerInfo {
   id: string;
   name: string;
@@ -20,7 +23,11 @@ export function serverUrl(): string {
 // The server checks the login token and decides our username and look itself.
 // If nothing answers within a few seconds we give up (and the game retries),
 // instead of sitting on "Connecting..." forever.
-export async function connectToTown(token: string, timeoutMs = 10000): Promise<Room> {
+export async function connectToPlace(
+  token: string,
+  place: Place,
+  timeoutMs = 10000,
+): Promise<Room> {
   const url = serverUrl();
   const client = new Client(url);
 
@@ -32,7 +39,11 @@ export async function connectToTown(token: string, timeoutMs = 10000): Promise<R
   });
 
   try {
-    return await Promise.race([client.joinOrCreate('town', { token }), timeout]);
+    const join =
+      place.kind === 'home'
+        ? client.joinOrCreate('home', { token, owner: place.owner })
+        : client.joinOrCreate('town', { token });
+    return await Promise.race([join, timeout]);
   } finally {
     window.clearTimeout(timer);
   }
