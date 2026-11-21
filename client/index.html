@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <title>DigiCommune</title>
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #1d2b1d;
+        touch-action: none;
+        -webkit-user-select: none;
+        user-select: none;
+        font-family: sans-serif;
+      }
+      #game {
+        width: 100vw;
+        height: 100dvh;
+      }
+      input, button {
+        font-size: 16px; /* 16px stops iPhones from zooming in on focus */
+      }
+      input {
+        -webkit-user-select: text;
+        user-select: text;
+      }
+
+      /* Login / sign up screen */
+      #auth {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: #1d2b1d;
+        z-index: 20;
+      }
+      #auth-form {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        width: min(330px, 86vw);
+        padding: 24px;
+        border-radius: 12px;
+        background: #243824;
+        color: #fff;
+      }
+      #auth-form h1 { margin: 0; font-size: 24px; }
+      #auth-form input {
+        padding: 10px;
+        border-radius: 8px;
+        border: none;
+      }
+      #auth-form .tabs { display: flex; gap: 6px; }
+      #auth-form .tab {
+        flex: 1;
+        padding: 8px;
+        border: none;
+        border-radius: 8px;
+        background: #33503a;
+        color: #fff;
+        cursor: pointer;
+      }
+      #auth-form .tab.active { background: #5cb85c; font-weight: bold; }
+      #auth-error { margin: 0; min-height: 18px; font-size: 14px; color: #ffb3b3; }
+      #auth-note { margin: 0; font-size: 12px; opacity: 0.7; }
+      #auth-submit {
+        padding: 10px;
+        border-radius: 8px;
+        border: none;
+        background: #5cb85c;
+        color: #fff;
+        font-weight: bold;
+        cursor: pointer;
+      }
+      #auth-submit:disabled { opacity: 0.6; cursor: default; }
+
+      /* Log out button (top right, under the status text) */
+      #logout {
+        position: fixed;
+        top: calc(34px + env(safe-area-inset-top));
+        right: 10px;
+        display: none;
+        padding: 4px 10px;
+        border-radius: 6px;
+        border: none;
+        background: rgba(0, 0, 0, 0.45);
+        color: #fff;
+        font-size: 13px;
+        cursor: pointer;
+        z-index: 10;
+      }
+
+      /* Chat bar */
+      #chat {
+        position: fixed;
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: calc(12px + env(safe-area-inset-bottom));
+        width: min(440px, 92vw);
+        display: none;
+        gap: 6px;
+        z-index: 10;
+      }
+      #chat-input {
+        flex: 1;
+        min-width: 0;
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: none;
+        background: rgba(255, 255, 255, 0.9);
+      }
+      #chat-send {
+        padding: 8px 12px;
+        border-radius: 8px;
+        border: none;
+        background: #5cb85c;
+        color: #fff;
+        font-weight: bold;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="game"></div>
+
+    <div id="auth">
+      <form id="auth-form">
+        <h1>DigiCommune</h1>
+        <div class="tabs">
+          <button type="button" id="tab-login" class="tab active">Log in</button>
+          <button type="button" id="tab-signup" class="tab">Sign up</button>
+        </div>
+        <input id="auth-username" type="text" maxlength="16" placeholder="Username"
+               autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" />
+        <input id="auth-password" type="password" placeholder="Password (8+ characters)"
+               autocomplete="current-password" />
+        <input id="auth-password2" type="password" placeholder="Confirm password"
+               autocomplete="new-password" style="display: none" />
+        <p id="auth-error"></p>
+        <button id="auth-submit" type="submit">Log in</button>
+        <p id="auth-note">Usernames: 3-16 letters, numbers, or underscores.</p>
+      </form>
+    </div>
+
+    <button id="logout" type="button">Log out</button>
+
+    <div id="chat">
+      <input id="chat-input" type="text" maxlength="120" placeholder="Press Enter to chat" autocomplete="off" />
+      <button id="chat-send" type="button">Send</button>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
