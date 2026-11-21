@@ -77,7 +77,7 @@ Test multiple players with a private/incognito window or another browser (tabs o
 - Milestone 5: wallet, daily rewards, shop, locked wardrobe items, server-verified avatar updates. Done and tested (per owner, 2026-11-21).
 
 ## Project folder and Git
-- This folder (`DigiCommuneDemo/DigiCommune/`) is the single working copy, a clone of https://github.com/ron1999/DigiCommuneDemo (public). Work happens on a branch per milestone, merged into `main` once tested. The old `DigiCommune-milestoneN*` folders and zips beside it are frozen snapshots; don't edit them.
+- This folder (`~/Documents/GitHub/DigiCommune`) is the single working copy, a clone of https://github.com/ron1999/DigiCommuneDemo (public), managed in GitHub Desktop (the owner pushes with its Push button). Work happens on a branch per milestone, merged into `main` once tested. The `~/Documents/ClaudeCode/DigiCommuneDemo/DigiCommune-milestoneN*` folders and zips are frozen snapshots; don't edit them.
 - Commit after each working step so any change can be undone. `.env` files stay local (ignored by Git).
 - `supabase/002_fix_profile_access.sql` was missing from the Milestone 5 snapshot; recover it from the owner's earlier copy if found.
 
