@@ -29,12 +29,16 @@ client/src/
   scenes/UIScene.ts     overlay: title, status text, touch joystick
   world/townMap.ts      seeded town map generator (same for every player)
   world/tileset.ts      placeholder tile art drawn in code
-  avatar/avatar.ts      avatar options, sanitizing, drawing (shared Painter interface)
-  avatar/textures.ts    turns an avatar into a Phaser texture
+  avatar/avatar.ts      avatar options (the numbers), sanitizing
+  avatar/sprites.ts     loads layer PNGs, tints grey layers, stacks them into one sheet per look
+  avatar/textures.ts    turns a look into a Phaser texture + walk animations, feet-based origin
   entities/NameTag.ts, RemotePlayer.ts
   net/network.ts        Colyseus connection with timeout
   ui/chat.ts, wardrobe.ts, shop.ts, hud.ts   HTML overlay panels
 client/index.html        all HTML + CSS for overlays (login, topbar, wardrobe, shop, chat)
+client/public/sprites/   character layer sheets (128x128 frames, 5 cols x 4 rows): see docs/ART_SPEC.md
+scripts/make-placeholder-sprites.mjs   regenerates PLACEHOLDER sprites (overwrites real art!)
+docs/ART_SPEC.md         format the character art must follow
 server/src/
   index.ts           Express + Colyseus startup (loads server/.env via dotenv)
   TownRoom.ts        the single shared room: join auth, move, chat, avatar relay
@@ -64,7 +68,8 @@ Test multiple players with a private/incognito window or another browser (tabs o
 - **Server is the source of truth:** the server verifies the login token (`server/src/auth.ts`) and takes the username and avatar from the database, never from the client. One connection per account (a new login kicks the old one with close code 4001).
 - **Economy lives in the database, not the client:** coins, inventory, daily rewards, and avatar saves go through `security definer` Postgres functions (`claim_daily_reward`, `buy_item`, `save_avatar`) called with `supabase.rpc`. Tables are read-only for players via Row Level Security. Every coin change is logged in `ledger`.
 - **Avatar:** six small integers (skin, hairStyle, hairColor, outfitStyle, outfitColor, accessory), stored in `profiles.avatar`. Option counts must stay in sync in THREE places: `client/src/avatar/avatar.ts`, `server/src/avatar.ts`, and the `items` seed in `supabase/003_economy.sql`.
-- **Art is placeholder:** drawn from shapes in code. Real (AI-generated) art will replace `drawAvatar` and `world/tileset.ts` later; keep the numbers-based avatar format.
+- **Character art:** 128x128 pixel-art frames, layered (body, face, outfit, hair, accessory), 4 directions x (stand + 4 walk frames). Skin/outfit/hair layers are drawn in grey and tinted in `sprites.ts`, so colors stay as numbers. Current files are placeholders from `scripts/make-placeholder-sprites.mjs`; the owner is making real art with an AI pixel-art tool following `docs/ART_SPEC.md`. Character positions (local, server, remote) are the **feet**.
+- **World scale:** 64px tiles, camera zoom 1. Tile art is still drawn in code at 32px and scaled 2x (`world/tileset.ts`); real tile art comes later. Tile size must match in `client/src/config.ts` and `TILE` in `server/src/TownRoom.ts`.
 - **Rooms (planned):** pre-made templates with predefined item slots (no free placement), roles Owner/Builder/Visitor/Blocked, visibility public/friends/invite.
 - **Daily reward:** day boundary is midnight America/New_York (set in both `claim_daily_reward()` SQL and `DAY_TIMEZONE` in `client/src/economy.ts`). 50 coins + 10 per streak day, max 100. New accounts get 100 coins.
 - **Link boards (planned):** only verified users, open in a new tab with a warning, report/remove tools.

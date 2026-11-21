@@ -2,11 +2,12 @@ import { Room, Client, ServerError } from 'colyseus';
 import { verifyToken, type VerifiedUser } from './auth';
 import { sanitizeAvatar, type Avatar } from './avatar';
 
-// Must match the client's map size (40 x 30 tiles of 32px) and spawn point.
-const WORLD_W = 40 * 32;
-const WORLD_H = 30 * 32;
-const SPAWN_X = 20 * 32;
-const SPAWN_Y = 15 * 32;
+// Must match the client's map size (40 x 30 tiles of 64px, client/src/config.ts) and spawn point.
+const TILE = 64;
+const WORLD_W = 40 * TILE;
+const WORLD_H = 30 * TILE;
+const SPAWN_X = 20 * TILE;
+const SPAWN_Y = 15 * TILE;
 
 const MAX_CHAT_LENGTH = 120;
 const CHAT_COOLDOWN_MS = 800;

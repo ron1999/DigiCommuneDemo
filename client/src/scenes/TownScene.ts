@@ -17,7 +17,9 @@ import { chat } from '../ui/chat';
 import { wardrobe } from '../ui/wardrobe';
 import { getAccessToken, logOut, saveAvatar } from '../auth';
 import { session } from '../session';
-import { ensureAvatarTexture } from '../avatar/textures';
+import { animateCharacter, ensureAvatarTexture, setupCharacterSprite } from '../avatar/textures';
+import { FEET_Y } from '../avatar/sprites';
+import type { Direction } from '../avatar/sprites';
 import type { Avatar } from '../avatar/avatar';
 
 export interface JoystickState {
@@ -30,6 +32,8 @@ const KICKED_CODE = 4001; // the server uses this when the same account logs in 
 
 export class TownScene extends Phaser.Scene {
   private player!: Phaser.Physics.Arcade.Sprite;
+  private playerKey = '';
+  private facing: Direction = 'down';
   private localTag!: NameTag;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private wasd!: Record<string, Phaser.Input.Keyboard.Key>;
@@ -71,16 +75,20 @@ export class TownScene extends Phaser.Scene {
     const worldH = MAP_H * TILE_SIZE;
     this.physics.world.setBounds(0, 0, worldW, worldH);
 
-    // Local player, drawn with the saved look
+    // Local player, drawn with the saved look. Its position is where its feet are.
+    this.playerKey = ensureAvatarTexture(this, session.avatar);
     this.player = this.physics.add.sprite(
-      SPAWN.x * TILE_SIZE,
-      SPAWN.y * TILE_SIZE,
-      ensureAvatarTexture(this, session.avatar),
+      SPAWN.x * TILE_SIZE + TILE_SIZE / 2,
+      SPAWN.y * TILE_SIZE + TILE_SIZE / 2,
+      this.playerKey,
+      0,
     );
+    setupCharacterSprite(this.player);
     this.player.setCollideWorldBounds(true);
+    // Collision box: a small area around the feet, so you can walk in front of walls
     const body = this.player.body as Phaser.Physics.Arcade.Body;
-    body.setSize(14, 10);
-    body.setOffset(5, 22);
+    body.setSize(36, 16);
+    body.setOffset(46, FEET_Y - 14);
     this.physics.add.collider(this.player, layer);
     this.localTag = new NameTag(this, session.name);
 
@@ -105,12 +113,12 @@ export class TownScene extends Phaser.Scene {
 
     // Wardrobe: preview changes on the character right away, save to the account on Save
     wardrobe.onPreview = (a: Avatar) => {
-      this.player.setTexture(ensureAvatarTexture(this, a));
+      this.playerKey = ensureAvatarTexture(this, a);
     };
     wardrobe.onSave = async (a: Avatar) => {
       await saveAvatar(a);
       session.avatar = a;
-      this.player.setTexture(ensureAvatarTexture(this, a));
+      this.playerKey = ensureAvatarTexture(this, a);
       // The server re-reads our saved look from the database, so it can't be faked
       const token = await getAccessToken();
       if (token) this.room?.send('avatar', { token });
@@ -262,6 +270,7 @@ export class TownScene extends Phaser.Scene {
     }
 
     this.player.setVelocity(vx * PLAYER_SPEED, vy * PLAYER_SPEED);
+    this.facing = animateCharacter(this.player, this.playerKey, vx, vy, this.facing);
     this.player.setDepth(this.player.y);
     this.localTag.follow(this.player.x, this.player.y);
 

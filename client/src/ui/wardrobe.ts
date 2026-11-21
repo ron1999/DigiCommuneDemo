@@ -1,4 +1,5 @@
-import { CATEGORIES, canvasPainter, drawAvatar } from '../avatar/avatar';
+import { CATEGORIES } from '../avatar/avatar';
+import { drawAvatarPreview } from '../avatar/sprites';
 import type { Avatar } from '../avatar/avatar';
 import { isUnlocked, itemFor, onEconomyChange } from '../economy';
 
@@ -24,9 +25,7 @@ const buttons = new Map<keyof Avatar, HTMLButtonElement[]>();
 let built = false;
 
 function renderPreview(): void {
-  const ctx = canvas.getContext('2d')!;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  drawAvatar(canvasPainter(ctx), current);
+  drawAvatarPreview(canvas.getContext('2d')!, current);
 }
 
 function refreshSelection(): void {

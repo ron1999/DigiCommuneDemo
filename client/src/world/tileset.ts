@@ -3,10 +3,13 @@ import { TILE_SIZE } from '../config';
 
 // Draws simple placeholder art in code so the prototype needs no image files.
 // Later we will replace this with real tileset images (AI-generated art + Tiled).
+// The art is designed at 32px and scaled up to TILE_SIZE with crisp pixels.
+const DESIGN_SIZE = 32;
+
 export function createTilesetTexture(scene: Phaser.Scene): void {
   if (scene.textures.exists('tiles')) return;
 
-  const S = TILE_SIZE;
+  const S = DESIGN_SIZE;
   const g = scene.make.graphics({}, false);
 
   const grassBase = (ox: number) => {
@@ -69,20 +72,16 @@ export function createTilesetTexture(scene: Phaser.Scene): void {
   g.fillCircle(ox + 10, 12, 1);
   g.fillCircle(ox + 22, 20, 1);
 
-  g.generateTexture('tiles', S * 7, S);
+  g.generateTexture('tiles-design', S * 7, S);
   g.destroy();
-}
 
-export function createPlayerTexture(scene: Phaser.Scene): void {
-  if (scene.textures.exists('player')) return;
-
-  const g = scene.make.graphics({}, false);
-  g.fillStyle(0x2a2a55, 1);
-  g.fillRect(6, 28, 5, 4);
-  g.fillRect(13, 28, 5, 4);
-  g.fillStyle(0x3b6fd4, 1).fillRect(4, 14, 16, 15);
-  g.fillStyle(0xf2c9a0, 1).fillCircle(12, 9, 7);
-  g.fillStyle(0x5a3825, 1).fillRect(5, 1, 14, 5);
-  g.generateTexture('player', 24, 32);
-  g.destroy();
+  // Scale up to the real tile size without blurring
+  const scale = TILE_SIZE / DESIGN_SIZE;
+  const src = scene.textures.get('tiles-design').getSourceImage() as HTMLImageElement | HTMLCanvasElement;
+  const canvas = scene.textures.createCanvas('tiles', S * 7 * scale, S * scale)!;
+  const ctx = canvas.getContext();
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(src, 0, 0, S * 7 * scale, S * scale);
+  canvas.refresh();
+  scene.textures.remove('tiles-design');
 }

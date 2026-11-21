@@ -6,6 +6,7 @@ import { initChat } from './ui/chat';
 import { openWardrobe } from './ui/wardrobe';
 import { initHud } from './ui/hud';
 import { openShop } from './ui/shop';
+import { loadSpriteLayers } from './avatar/sprites';
 import { isSupabaseConfigured } from './supabase';
 import {
   MIN_PASSWORD_LENGTH,
@@ -65,7 +66,9 @@ function startGame(): void {
   });
 }
 
-function enterGame(profile: Profile): void {
+async function enterGame(profile: Profile): Promise<void> {
+  // Character art must be loaded before the game or wardrobe draws anyone
+  await loadSpriteLayers();
   session.name = profile.username;
   session.avatar = profile.avatar;
   authPanel.style.display = 'none';
@@ -104,7 +107,7 @@ authForm.addEventListener('submit', async (e) => {
   try {
     const profile =
       mode === 'signup' ? await signUp(username, password) : await logIn(username, password);
-    enterGame(profile);
+    await enterGame(profile);
   } catch (err) {
     errorText.textContent = (err as Error).message;
   } finally {
@@ -135,7 +138,7 @@ async function init(): Promise<void> {
   // Already logged in from a previous visit? Go straight into the game.
   try {
     const existing = await getCurrentProfile();
-    if (existing) enterGame(existing);
+    if (existing) await enterGame(existing);
   } catch (err) {
     console.error(err);
   }
