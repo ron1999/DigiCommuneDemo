@@ -111,7 +111,9 @@ export class TownScene extends Phaser.Scene {
       await saveAvatar(a);
       session.avatar = a;
       this.player.setTexture(ensureAvatarTexture(this, a));
-      this.room?.send('avatar', { avatar: a });
+      // The server re-reads our saved look from the database, so it can't be faked
+      const token = await getAccessToken();
+      if (token) this.room?.send('avatar', { token });
     };
 
     // Shared state for the UI overlay

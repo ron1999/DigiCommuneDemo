@@ -111,6 +111,17 @@
         display: none;
         gap: 6px;
         z-index: 10;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        align-items: center;
+        max-width: calc(100vw - 20px);
+      }
+      #coins {
+        padding: 4px 8px;
+        border-radius: 6px;
+        background: rgba(0, 0, 0, 0.45);
+        color: #fff;
+        font-size: 13px;
       }
       #topbar button {
         padding: 4px 10px;
@@ -123,7 +134,7 @@
       }
 
       /* Wardrobe: side panel on desktop, bottom sheet on phones */
-      #wardrobe {
+      .side-panel {
         position: fixed;
         top: 0;
         right: 0;
@@ -191,7 +202,7 @@
       #wardrobe-save:disabled { opacity: 0.6; cursor: default; }
       #wardrobe-cancel { background: #4a4a4a; color: #fff; }
       @media (max-width: 700px) {
-        #wardrobe {
+        .side-panel {
           top: auto;
           left: 0;
           width: 100%;
@@ -200,6 +211,71 @@
           border-radius: 16px 16px 0 0;
           padding-bottom: calc(12px + env(safe-area-inset-bottom));
         }
+      }
+
+      /* Locked wardrobe options */
+      .w-btn.locked, .w-swatch.locked { opacity: 0.4; }
+
+      /* Shop */
+      #shop-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 18px;
+        font-weight: bold;
+      }
+      #shop-balance { font-size: 14px; font-weight: normal; }
+      #shop-list { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+      .shop-cat { font-size: 13px; opacity: 0.8; margin: 12px 0 2px; }
+      .shop-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .shop-swatch { width: 22px; height: 22px; border-radius: 50%; flex: none; }
+      .shop-name { flex: 1; font-size: 14px; }
+      .shop-price { font-size: 13px; opacity: 0.85; }
+      .shop-buy {
+        padding: 5px 10px;
+        border-radius: 8px;
+        border: none;
+        background: #5cb85c;
+        color: #fff;
+        font-size: 13px;
+        font-weight: bold;
+        cursor: pointer;
+      }
+      .shop-buy:disabled { background: #4a4a4a; opacity: 0.7; cursor: default; }
+      #shop-error { margin: 0; min-height: 16px; font-size: 13px; color: #ffb3b3; }
+      #shop-close {
+        width: 100%;
+        padding: 10px;
+        border-radius: 8px;
+        border: none;
+        background: #4a4a4a;
+        color: #fff;
+        font-weight: bold;
+        cursor: pointer;
+      }
+
+      /* Daily reward button and pop-up message */
+      #claim-btn { display: none; background: #f2c94c !important; color: #222 !important; font-weight: bold; }
+      #toast {
+        display: none;
+        position: fixed;
+        top: calc(70px + env(safe-area-inset-top));
+        left: 50%;
+        transform: translateX(-50%);
+        max-width: 90vw;
+        padding: 8px 14px;
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.8);
+        color: #fff;
+        font-size: 14px;
+        text-align: center;
+        z-index: 30;
       }
 
       /* Chat bar */
@@ -282,11 +358,26 @@
     </div>
 
     <div id="topbar">
+      <span id="coins">Coins: ...</span>
+      <button id="claim-btn" type="button">Claim daily reward</button>
+      <button id="shop-btn" type="button">Shop</button>
       <button id="wardrobe-btn" type="button">Wardrobe</button>
       <button id="logout" type="button">Log out</button>
     </div>
 
-    <div id="wardrobe">
+    <div id="toast"></div>
+
+    <div id="shop" class="side-panel">
+      <div id="shop-head">
+        <div>Shop</div>
+        <div id="shop-balance">Coins: 0</div>
+      </div>
+      <div id="shop-list"></div>
+      <p id="shop-error"></p>
+      <button id="shop-close" type="button">Close</button>
+    </div>
+
+    <div id="wardrobe" class="side-panel">
       <div id="wardrobe-head">
         <canvas id="wardrobe-preview" width="24" height="32"></canvas>
         <div id="wardrobe-title">Wardrobe</div>

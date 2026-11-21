@@ -4,6 +4,8 @@ import { UIScene } from './scenes/UIScene';
 import { session } from './session';
 import { initChat } from './ui/chat';
 import { openWardrobe } from './ui/wardrobe';
+import { initHud } from './ui/hud';
+import { openShop } from './ui/shop';
 import { isSupabaseConfigured } from './supabase';
 import {
   MIN_PASSWORD_LENGTH,
@@ -30,6 +32,7 @@ const chatBar = $('chat');
 const topbar = $('topbar');
 const logoutBtn = $<HTMLButtonElement>('logout');
 const wardrobeBtn = $<HTMLButtonElement>('wardrobe-btn');
+const shopBtn = $<HTMLButtonElement>('shop-btn');
 
 let mode: 'login' | 'signup' = 'login';
 
@@ -70,6 +73,7 @@ function enterGame(profile: Profile): void {
   topbar.style.display = 'flex';
   initChat();
   startGame();
+  void initHud();
   // First visit: let them design their character right away
   if (profile.isNew) openWardrobe(session.avatar, true);
 }
@@ -109,6 +113,7 @@ authForm.addEventListener('submit', async (e) => {
 });
 
 wardrobeBtn.addEventListener('click', () => openWardrobe(session.avatar));
+shopBtn.addEventListener('click', () => openShop());
 
 logoutBtn.addEventListener('click', async () => {
   await logOut();

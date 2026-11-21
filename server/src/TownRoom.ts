@@ -91,7 +91,9 @@ export class TownRoom extends Room {
     });
 
     // Player changed their look in the wardrobe (the client saves it to the database itself)
-    this.onMessage('avatar', (client: Client, message: any) => {
+    // The client only sends its login token; we read the saved look from the database,
+    // which has already checked that the player owns every item.
+    this.onMessage('avatar', async (client: Client, message: any) => {
       const p = this.players.get(client.sessionId);
       if (!p) return;
 
@@ -100,8 +102,15 @@ export class TownRoom extends Room {
       if (now - last < AVATAR_COOLDOWN_MS) return;
       this.lastAvatarAt.set(client.sessionId, now);
 
-      p.avatar = sanitizeAvatar(message?.avatar);
-      this.broadcast('avatar', { id: p.id, avatar: p.avatar }, { except: client });
+      const token = typeof message?.token === 'string' ? message.token : '';
+      try {
+        const user = await verifyToken(token);
+        if (!user || user.id !== this.userBySession.get(client.sessionId)) return;
+        p.avatar = sanitizeAvatar(user.avatar);
+        this.broadcast('avatar', { id: p.id, avatar: p.avatar }, { except: client });
+      } catch (err) {
+        console.error('Avatar refresh failed:', err);
+      }
     });
 
     // The client says "ready" once its message handlers are set up.

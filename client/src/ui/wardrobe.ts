@@ -1,5 +1,6 @@
 import { CATEGORIES, canvasPainter, drawAvatar } from '../avatar/avatar';
 import type { Avatar } from '../avatar/avatar';
+import { isUnlocked, itemFor, onEconomyChange } from '../economy';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -34,6 +35,21 @@ function refreshSelection(): void {
   });
 }
 
+// Dim options the player hasn't unlocked yet and show their price
+function refreshLocks(): void {
+  CATEGORIES.forEach((cat) => {
+    buttons.get(cat.key)?.forEach((btn, i) => {
+      const unlocked = isUnlocked(cat.key, i);
+      const item = itemFor(cat.key, i);
+      btn.classList.toggle('locked', !unlocked);
+      btn.title = unlocked ? '' : 'Locked' + (item ? ': ' + item.price + ' coins in the Shop' : '');
+      if (btn.dataset.name) {
+        btn.textContent = unlocked ? btn.dataset.name : btn.dataset.name + ' (' + (item?.price ?? '?') + ')';
+      }
+    });
+  });
+}
+
 function build(): void {
   if (built) return;
   built = true;
@@ -59,8 +75,14 @@ function build(): void {
       } else {
         btn.className = 'w-btn';
         btn.textContent = cat.names![i];
+        btn.dataset.name = cat.names![i];
       }
       btn.addEventListener('click', () => {
+        if (!isUnlocked(cat.key, i)) {
+          errorText.textContent = 'Locked: buy it in the Shop first.';
+          return;
+        }
+        errorText.textContent = '';
         current = { ...current, [cat.key]: i };
         refreshSelection();
         renderPreview();
@@ -87,8 +109,10 @@ export function openWardrobe(initial: Avatar, firstTime = false): void {
   current = { ...initial };
   title.textContent = firstTime ? 'Create your character' : 'Wardrobe';
   errorText.textContent = '';
+  $('shop').style.display = 'none';
   panel.style.display = 'flex';
   refreshSelection();
+  refreshLocks();
   renderPreview();
 }
 
@@ -109,3 +133,5 @@ cancelBtn.addEventListener('click', () => {
   wardrobe.onPreview?.(saved); // put the character back to how it was
   close();
 });
+
+onEconomyChange(refreshLocks);

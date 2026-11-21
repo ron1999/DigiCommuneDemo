@@ -103,20 +103,10 @@ export async function logOut(): Promise<void> {
   await supabase.auth.signOut();
 }
 
-// Saves the player's look to their profile (the database only lets you change your own).
+// Saves the player's look. The database checks that every part is free or owned.
 export async function saveAvatar(avatar: Avatar): Promise<void> {
-  const { data: s } = await supabase.auth.getSession();
-  if (!s.session) throw new Error('You are logged out. Reload the page.');
-
-  const { data, error } = await supabase
-    .from('profiles')
-    .update({ avatar })
-    .eq('id', s.session.user.id)
-    .select('avatar');
-  if (error) throw new Error('Could not save: ' + error.message);
-  if (!data || data.length === 0) {
-    throw new Error('Could not save your character (no permission). Did you run 002_fix_profile_access.sql?');
-  }
+  const { error } = await supabase.rpc('save_avatar', { p_avatar: avatar });
+  if (error) throw new Error(error.message);
 }
 
 // Always asks Supabase, which refreshes the token automatically if it expired.
