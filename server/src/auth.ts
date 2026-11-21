@@ -5,6 +5,7 @@
 export interface VerifiedUser {
   id: string;
   username: string;
+  avatar: unknown; // raw value from the database; sanitize before use
 }
 
 export function authConfigured(): boolean {
@@ -22,20 +23,23 @@ export async function verifyToken(token: string): Promise<VerifiedUser | null> {
   const headers = { apikey: anonKey, Authorization: 'Bearer ' + token };
 
   // 1) Is this token real, and whose is it?
-  const userRes = await fetch(url + '/auth/v1/user', { headers });
+  const userRes = await fetch(url + '/auth/v1/user', {
+    headers,
+    signal: AbortSignal.timeout(8000),
+  });
   if (!userRes.ok) return null;
   const user = (await userRes.json()) as { id?: string };
   if (!user.id) return null;
 
   // 2) Look up their username (the row is only readable with their valid token)
   const profileRes = await fetch(
-    url + '/rest/v1/profiles?select=username&id=eq.' + encodeURIComponent(user.id),
-    { headers },
+    url + '/rest/v1/profiles?select=username,avatar&id=eq.' + encodeURIComponent(user.id),
+    { headers, signal: AbortSignal.timeout(8000) },
   );
   if (!profileRes.ok) return null;
-  const rows = (await profileRes.json()) as { username?: string }[];
+  const rows = (await profileRes.json()) as { username?: string; avatar?: unknown }[];
   const username = rows[0]?.username;
   if (!username) return null;
 
-  return { id: user.id, username };
+  return { id: user.id, username, avatar: rows[0]?.avatar };
 }

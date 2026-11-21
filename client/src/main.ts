@@ -3,15 +3,17 @@ import { TownScene } from './scenes/TownScene';
 import { UIScene } from './scenes/UIScene';
 import { session } from './session';
 import { initChat } from './ui/chat';
+import { openWardrobe } from './ui/wardrobe';
 import { isSupabaseConfigured } from './supabase';
 import {
   MIN_PASSWORD_LENGTH,
   USERNAME_PATTERN,
-  getCurrentUsername,
+  getCurrentProfile,
   logIn,
   logOut,
   signUp,
 } from './auth';
+import type { Profile } from './auth';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -25,7 +27,9 @@ const password2Input = $<HTMLInputElement>('auth-password2');
 const errorText = $('auth-error');
 const submitBtn = $<HTMLButtonElement>('auth-submit');
 const chatBar = $('chat');
+const topbar = $('topbar');
 const logoutBtn = $<HTMLButtonElement>('logout');
+const wardrobeBtn = $<HTMLButtonElement>('wardrobe-btn');
 
 let mode: 'login' | 'signup' = 'login';
 
@@ -58,13 +62,16 @@ function startGame(): void {
   });
 }
 
-function enterGame(username: string): void {
-  session.name = username;
+function enterGame(profile: Profile): void {
+  session.name = profile.username;
+  session.avatar = profile.avatar;
   authPanel.style.display = 'none';
   chatBar.style.display = 'flex';
-  logoutBtn.style.display = 'block';
+  topbar.style.display = 'flex';
   initChat();
   startGame();
+  // First visit: let them design their character right away
+  if (profile.isNew) openWardrobe(session.avatar, true);
 }
 
 tabLogin.addEventListener('click', () => setMode('login'));
@@ -91,8 +98,9 @@ authForm.addEventListener('submit', async (e) => {
   errorText.textContent = '';
   submitBtn.disabled = true;
   try {
-    const name = mode === 'signup' ? await signUp(username, password) : await logIn(username, password);
-    enterGame(name);
+    const profile =
+      mode === 'signup' ? await signUp(username, password) : await logIn(username, password);
+    enterGame(profile);
   } catch (err) {
     errorText.textContent = (err as Error).message;
   } finally {
@@ -100,12 +108,16 @@ authForm.addEventListener('submit', async (e) => {
   }
 });
 
+wardrobeBtn.addEventListener('click', () => openWardrobe(session.avatar));
+
 logoutBtn.addEventListener('click', async () => {
   await logOut();
   window.location.reload();
 });
 
 async function init(): Promise<void> {
+  // Tell the page's safety check that the app started
+  (window as unknown as { __dcStarted?: () => void }).__dcStarted?.();
   authPanel.style.display = 'flex';
 
   if (!isSupabaseConfigured) {
@@ -117,7 +129,7 @@ async function init(): Promise<void> {
 
   // Already logged in from a previous visit? Go straight into the game.
   try {
-    const existing = await getCurrentUsername();
+    const existing = await getCurrentProfile();
     if (existing) enterGame(existing);
   } catch (err) {
     console.error(err);

@@ -1,5 +1,8 @@
 import Phaser from 'phaser';
 import type { PlayerInfo } from '../net/network';
+import { sanitizeAvatar } from '../avatar/avatar';
+import type { Avatar } from '../avatar/avatar';
+import { ensureAvatarTexture } from '../avatar/textures';
 import { NameTag } from './NameTag';
 
 // Another person's character. It glides smoothly toward the latest position
@@ -10,12 +13,22 @@ export class RemotePlayer {
   private targetX: number;
   private targetY: number;
 
-  constructor(scene: Phaser.Scene, info: PlayerInfo) {
-    this.sprite = scene.add.image(info.x, info.y, 'player');
-    this.sprite.setTint(colorFromId(info.id));
+  constructor(
+    private scene: Phaser.Scene,
+    info: PlayerInfo,
+  ) {
+    this.sprite = scene.add.image(
+      info.x,
+      info.y,
+      ensureAvatarTexture(scene, sanitizeAvatar(info.avatar)),
+    );
     this.tag = new NameTag(scene, info.name);
     this.targetX = info.x;
     this.targetY = info.y;
+  }
+
+  setAvatar(avatar: Avatar): void {
+    this.sprite.setTexture(ensureAvatarTexture(this.scene, sanitizeAvatar(avatar)));
   }
 
   setTarget(x: number, y: number): void {
@@ -34,13 +47,4 @@ export class RemotePlayer {
     this.sprite.destroy();
     this.tag.destroy();
   }
-}
-
-// Gives each player a stable color tint (temporary until avatar customization).
-function colorFromId(id: string): number {
-  let hash = 0;
-  for (let i = 0; i < id.length; i++) {
-    hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
-  }
-  return Phaser.Display.Color.HSLToColor((hash % 360) / 360, 0.55, 0.75).color;
 }

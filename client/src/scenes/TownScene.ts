@@ -8,13 +8,17 @@ import {
   TILE_SIZE,
 } from '../config';
 import { BLOCKED_TILES, SPAWN, buildTownMap } from '../world/townMap';
-import { createPlayerTexture, createTilesetTexture } from '../world/tileset';
+import { createTilesetTexture } from '../world/tileset';
 import { NameTag } from '../entities/NameTag';
 import { RemotePlayer } from '../entities/RemotePlayer';
-import { connectToTown, type PlayerInfo } from '../net/network';
+import { connectToTown } from '../net/network';
+import type { PlayerInfo } from '../net/network';
 import { chat } from '../ui/chat';
-import { getAccessToken, logOut } from '../auth';
+import { wardrobe } from '../ui/wardrobe';
+import { getAccessToken, logOut, saveAvatar } from '../auth';
 import { session } from '../session';
+import { ensureAvatarTexture } from '../avatar/textures';
+import type { Avatar } from '../avatar/avatar';
 
 export interface JoystickState {
   x: number;
@@ -22,6 +26,7 @@ export interface JoystickState {
 }
 
 const SEND_INTERVAL_MS = 66; // about 15 position updates per second
+const KICKED_CODE = 4001; // the server uses this when the same account logs in elsewhere
 
 export class TownScene extends Phaser.Scene {
   private player!: Phaser.Physics.Arcade.Sprite;
@@ -35,13 +40,22 @@ export class TownScene extends Phaser.Scene {
   private lastSentX = 0;
   private lastSentY = 0;
 
+  private reconnectAttempts = 0;
+  private connecting = false;
+  private kicked = false;
+  private shuttingDown = false;
+
+  // Phones pause pages in the background and drop the connection; reconnect when back.
+  private onVisible = (): void => {
+    if (!document.hidden && !this.room && !this.kicked) void this.connect();
+  };
+
   constructor() {
     super('TownScene');
   }
 
   create(): void {
     createTilesetTexture(this);
-    createPlayerTexture(this);
 
     // Build the tile map from data
     const map = this.make.tilemap({
@@ -57,11 +71,11 @@ export class TownScene extends Phaser.Scene {
     const worldH = MAP_H * TILE_SIZE;
     this.physics.world.setBounds(0, 0, worldW, worldH);
 
-    // Local player
+    // Local player, drawn with the saved look
     this.player = this.physics.add.sprite(
       SPAWN.x * TILE_SIZE,
       SPAWN.y * TILE_SIZE,
-      'player',
+      ensureAvatarTexture(this, session.avatar),
     );
     this.player.setCollideWorldBounds(true);
     const body = this.player.body as Phaser.Physics.Arcade.Body;
@@ -89,15 +103,32 @@ export class TownScene extends Phaser.Scene {
     };
     chat.onSend = (text) => this.room?.send('chat', { text });
 
+    // Wardrobe: preview changes on the character right away, save to the account on Save
+    wardrobe.onPreview = (a: Avatar) => {
+      this.player.setTexture(ensureAvatarTexture(this, a));
+    };
+    wardrobe.onSave = async (a: Avatar) => {
+      await saveAvatar(a);
+      session.avatar = a;
+      this.player.setTexture(ensureAvatarTexture(this, a));
+      this.room?.send('avatar', { avatar: a });
+    };
+
     // Shared state for the UI overlay
     const joy: JoystickState = { x: 0, y: 0 };
     this.registry.set('joy', joy);
     this.registry.set('status', 'Connecting...');
     this.scene.launch('UIScene');
 
+    document.addEventListener('visibilitychange', this.onVisible);
+
     this.events.once('shutdown', () => {
+      this.shuttingDown = true;
+      document.removeEventListener('visibilitychange', this.onVisible);
       chat.onFocusChange = null;
       chat.onSend = null;
+      wardrobe.onPreview = null;
+      wardrobe.onSave = null;
       this.room?.leave();
     });
 
@@ -105,11 +136,19 @@ export class TownScene extends Phaser.Scene {
   }
 
   private async connect(): Promise<void> {
+    if (this.connecting || this.room || this.kicked || this.shuttingDown) return;
+    this.connecting = true;
+    this.registry.set('status', this.reconnectAttempts > 0 ? 'Reconnecting...' : 'Connecting...');
+
     try {
       const token = await getAccessToken();
       if (!token) throw Object.assign(new Error('Not logged in'), { code: 401 });
       const room = await connectToTown(token);
+
+      // Start fresh: the server tells us who is here
+      this.clearRemotes();
       this.room = room;
+      this.reconnectAttempts = 0;
 
       room.onMessage('init', (data: { id: string; players: PlayerInfo[] }) => {
         data.players.forEach((p) => this.addRemote(p));
@@ -122,6 +161,9 @@ export class TownScene extends Phaser.Scene {
       room.onMessage('moved', (m: { id: string; x: number; y: number }) => {
         this.remotes.get(m.id)?.setTarget(m.x, m.y);
       });
+      room.onMessage('avatar', (m: { id: string; avatar: Avatar }) => {
+        this.remotes.get(m.id)?.setAvatar(m.avatar);
+      });
       room.onMessage('chat', (m: { id: string; text: string }) => {
         if (m.id === room.sessionId) this.localTag.say(m.text);
         else this.remotes.get(m.id)?.tag.say(m.text);
@@ -132,19 +174,27 @@ export class TownScene extends Phaser.Scene {
         this.updateStatus();
       });
       room.onLeave((code: number) => {
-        this.room = null;
-        this.registry.set(
-          'status',
-          code === 4001 ? 'Logged in from another window' : 'Disconnected from server',
-        );
+        if (this.shuttingDown) return;
+        if (this.room === room) this.room = null;
+        this.clearRemotes();
+        if (code === KICKED_CODE) {
+          this.kicked = true;
+          this.registry.set('status', session.name + ' is open in another window');
+          return;
+        }
+        this.scheduleReconnect();
       });
 
-      // Handlers are ready, so ask the server to send who is already here
+      // Tell the server where we really are (it starts everyone at the town centre),
+      // then ask who is already here.
+      this.lastSentX = this.player.x;
+      this.lastSentY = this.player.y;
+      room.send('move', { x: Math.round(this.player.x), y: Math.round(this.player.y) });
       room.send('ready');
       this.updateStatus();
     } catch (err) {
       console.error('Could not connect to the server', err);
-      const code = (err as { code?: number }).code;
+      const code = (err as { code?: number | string }).code;
       if (code === 401) {
         // Login expired or invalid: sign out and show the login screen again
         await logOut();
@@ -152,11 +202,29 @@ export class TownScene extends Phaser.Scene {
         return;
       }
       const msg = (err as { message?: string }).message;
-      this.registry.set(
-        'status',
-        code === 500 && msg ? 'Server error: ' + msg : 'Offline: is the server running?',
-      );
+      if (code === 500 && msg) {
+        this.registry.set('status', 'Server error: ' + msg);
+      } else if (code === 'TIMEOUT') {
+        this.scheduleReconnect('No reply from server');
+      } else {
+        this.scheduleReconnect('Cannot reach server');
+      }
+    } finally {
+      this.connecting = false;
     }
+  }
+
+  private scheduleReconnect(reason?: string): void {
+    if (this.kicked || this.shuttingDown) return;
+    this.reconnectAttempts++;
+    const delay = Math.min(1000 * this.reconnectAttempts, 8000);
+    this.registry.set('status', reason ? reason + ' - retrying' : 'Reconnecting...');
+    this.time.delayedCall(delay, () => void this.connect());
+  }
+
+  private clearRemotes(): void {
+    this.remotes.forEach((r) => r.destroy());
+    this.remotes.clear();
   }
 
   private addRemote(info: PlayerInfo): void {
@@ -165,7 +233,7 @@ export class TownScene extends Phaser.Scene {
   }
 
   private updateStatus(): void {
-    this.registry.set('status', 'Online: ' + (this.remotes.size + 1));
+    this.registry.set('status', session.name + ' | Online: ' + (this.remotes.size + 1));
   }
 
   update(time: number): void {
