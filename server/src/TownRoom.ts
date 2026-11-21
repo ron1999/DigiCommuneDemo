@@ -124,7 +124,12 @@ export class TownRoom extends Room {
     });
   }
 
-  onJoin(client: Client, _options: any, auth: VerifiedUser): void {
+  onJoin(client: Client, _options?: any, auth?: VerifiedUser): void {
+    // onAuth always returns a user or throws, so this is only a safety net
+    if (!auth) {
+      client.leave(4000);
+      return;
+    }
     // One connection per account: a new login replaces the old one
     const oldSession = this.sessionByUser.get(auth.id);
     if (oldSession) {
