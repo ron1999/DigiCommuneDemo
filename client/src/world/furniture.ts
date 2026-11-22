@@ -3,9 +3,10 @@ import { TILE_SIZE } from '../config';
 import { FURNITURE, SLOT_SIZE } from './rooms';
 import type { Furniture } from './rooms';
 
-// PLACEHOLDER furniture art drawn in code at 32px per tile, scaled up to TILE_SIZE.
-// Real art: load an image under the texture key 'furnart_<id>' before createFurnitureTextures()
-// runs (same size as the piece: tiles wide x tiles tall, 64px per tile) and it is used instead.
+// Furniture art. The real art is PNGs in client/public/furniture/ (see loadFurnitureArt below);
+// the painters here draw the PLACEHOLDER fallback in code at 32px per tile, scaled up to TILE_SIZE.
+// An image loaded under the texture key 'furnart_<id>' before createFurnitureTextures() runs
+// (same size as the piece: tiles wide x tiles tall, 64px per tile) also takes priority.
 
 const D = 32; // design size of one tile
 const OUTLINE = 0x2b2024;
@@ -116,6 +117,34 @@ export function furnitureTextureKey(f: Furniture): string {
   return 'furn_' + f.id;
 }
 
+// Real art (PixelLab): client/public/furniture/<id>.png at the piece's size in game pixels
+// (64px per tile), made by scripts/build-furniture.mjs. Loaded here so the scenes don't need
+// to know about it; until a file has loaded (or if it's missing) the placeholder is shown,
+// and the texture is redrawn as soon as the image arrives.
+const FURNITURE_ART_DIR = 'furniture/';
+const furnitureArt = new Map<string, HTMLImageElement>();
+const furnitureArtWaiting = new Map<string, (() => void)[]>();
+
+function loadFurnitureArt(id: string, onLoad: () => void): HTMLImageElement | null {
+  const ready = furnitureArt.get(id);
+  if (ready) return ready;
+  const waiting = furnitureArtWaiting.get(id);
+  if (waiting) {
+    waiting.push(onLoad);
+    return null;
+  }
+  furnitureArtWaiting.set(id, [onLoad]);
+  const img = new Image();
+  img.onload = () => {
+    furnitureArt.set(id, img);
+    for (const cb of furnitureArtWaiting.get(id) ?? []) cb();
+    furnitureArtWaiting.delete(id);
+  };
+  img.onerror = () => furnitureArtWaiting.delete(id);
+  img.src = FURNITURE_ART_DIR + id + '.png';
+  return null;
+}
+
 // Makes sure every piece of furniture has a texture (real art if loaded, or the placeholder)
 export function createFurnitureTextures(scene: Phaser.Scene): void {
   const scale = TILE_SIZE / D;
@@ -126,13 +155,22 @@ export function createFurnitureTextures(scene: Phaser.Scene): void {
     const w = size.w * D;
     const h = size.h * D;
 
-    const art = scene.textures.exists('furnart_' + f.id)
-      ? (scene.textures.get('furnart_' + f.id).getSourceImage() as HTMLImageElement)
-      : null;
-
     const canvas = scene.textures.createCanvas(key, w * scale, h * scale)!;
     const ctx = canvas.getContext();
     ctx.imageSmoothingEnabled = false;
+
+    const drawArt = (img: HTMLImageElement) => {
+      ctx.clearRect(0, 0, w * scale, h * scale);
+      ctx.drawImage(img, 0, 0, w * scale, h * scale);
+      canvas.refresh();
+    };
+    const art = scene.textures.exists('furnart_' + f.id)
+      ? (scene.textures.get('furnart_' + f.id).getSourceImage() as HTMLImageElement)
+      : loadFurnitureArt(f.id, () => {
+          const img = furnitureArt.get(f.id);
+          // the texture may have been removed if the game was torn down meanwhile
+          if (img && scene.textures.exists(key)) drawArt(img);
+        });
 
     if (art) {
       ctx.drawImage(art, 0, 0, w * scale, h * scale);

@@ -2,8 +2,8 @@ import Phaser from 'phaser';
 import { TILE_SIZE } from '../config';
 import { TILE_COUNT } from './townMap';
 
-// Draws simple placeholder art in code so the prototype needs no image files.
-// Later we will replace this with real tileset images (AI-generated art + Tiled).
+// Draws simple placeholder art in code (the fallback), then swaps in the real tile art from
+// client/public/tiles/tiles.png once it has loaded (see loadTileArt below).
 // The art is designed at 32px and scaled up to TILE_SIZE with crisp pixels.
 const DESIGN_SIZE = 32;
 
@@ -120,4 +120,37 @@ export function createTilesetTexture(scene: Phaser.Scene): void {
   ctx.drawImage(src, 0, 0, S * TILE_COUNT * scale, S * scale);
   canvas.refresh();
   scene.textures.remove('tiles-design');
+
+  loadTileArt(canvas);
+}
+
+// Real tile art (PixelLab): client/public/tiles/tiles.png, one row of 32x32 tiles in the
+// same order as T in townMap.ts (made by scripts/build-tiles.mjs). Each tile that has
+// pixels replaces the code-drawn one; a missing file or an empty tile keeps the placeholder.
+const TILE_ART = 'tiles/tiles.png';
+
+function loadTileArt(canvas: Phaser.Textures.CanvasTexture): void {
+  const img = new Image();
+  img.onload = () => {
+    const S = DESIGN_SIZE;
+    const scale = TILE_SIZE / S;
+    const probe = document.createElement('canvas');
+    probe.width = img.width;
+    probe.height = img.height;
+    const pctx = probe.getContext('2d', { willReadFrequently: true })!;
+    pctx.drawImage(img, 0, 0);
+    const ctx = canvas.getContext();
+    ctx.imageSmoothingEnabled = false;
+    const count = Math.min(TILE_COUNT, Math.floor(img.width / S));
+    for (let i = 0; i < count; i++) {
+      const alpha = pctx.getImageData(i * S, 0, S, S).data;
+      let hasPixels = false;
+      for (let p = 3; p < alpha.length; p += 4) if (alpha[p] > 0) { hasPixels = true; break; }
+      if (!hasPixels) continue;
+      ctx.clearRect(i * TILE_SIZE, 0, TILE_SIZE, TILE_SIZE);
+      ctx.drawImage(img, i * S, 0, S, S, i * TILE_SIZE, 0, S * scale, S * scale);
+    }
+    canvas.refresh();
+  };
+  img.src = TILE_ART;
 }

@@ -32,7 +32,7 @@ These must be the same in every frame of every file, or the pieces won't line up
 
 - Centered left-to-right (middle of the body at x = 64).
 - **Feet touch y = 116** (12 px from the bottom). The game stands the character on this line.
-- The top of the head is around y = 20-24. The name tag floats just above it.
+- The top of the head is around y = 20-32 (the current PixelLab base: y ≈ 31, about 85 px tall). The name tag floats just above y = 20.
 - The character is about **64 px wide and 96 px tall**, about 1 x 1.5 world tiles (tiles are 64 px).
 
 Tip: open a placeholder file from `client/public/sprites/` in your editor and draw your new
@@ -75,24 +75,88 @@ The game swaps grey for the player's chosen color:
 So: draw recolorable pieces in greys with a near-black outline, and you get every color
 combination for free.
 
-## Making it with an AI pixel-art tool
+## How the current art is made (PixelLab + a script)
 
-AI tools are good at single characters and weak at keeping separate pieces lined up across
-frames. A workflow that tends to work:
+The character layers in `client/public/sprites/` are built from **one** PixelLab character, so
+every layer lines up exactly in every frame:
 
-1. **Make one base character first:** a plain, bald body in the 4 directions with a walk cycle,
-   at 128 x 128 per frame, transparent background. Tools with "rotations" + "walk animation"
-   features (e.g. PixelLab) do this well. This becomes `body.png` (+ `face.png`).
-2. **Make each piece on that same base** using the tool's "edit / inpaint / reference image"
-   feature, e.g. "add short hair" on each frame, so the hair sits exactly where the head is.
-3. **Cut the piece out:** erase everything except the new part (the hair, the hoodie...) in a
-   pixel editor (Aseprite, Piskel, or Libresprite, which is free) and save it as its own layer file.
-4. **Turn recolorable pieces grey:** desaturate the layer (Hue/Saturation -> saturation 0),
-   then adjust brightness so the main area is around mid grey.
-5. **Line up and export** as a 640 x 512 sheet in the layout above.
+1. **Base character** (PixelLab MCP, ~4 generations): `create_character` in `standard` mode,
+   4 directions, `size` 88 (stored on a 124 x 124 canvas), `chibi` proportions, low top-down
+   view, prompt "bald, plain light grey sleeveless top and grey shorts, barefoot". Then
+   `animate_character` with the template `walking-4-frames` for **south, north and west**
+   (one direction per call on the trial plan; east is west mirrored).
+2. **Raw frames are kept** in `scripts/art-src/base-character/` (PixelLab download ZIP:
+   `rotations/<dir>.png` = standing, `animations/walk4/<dir>/frame_00N.png` = walk).
+3. **Run** `node scripts/build-character-layers.mjs` (needs no installs). It:
+   - places every frame with the feet on y = 116, same offset for a whole direction (keeps the bob);
+   - `body.png`: the base's skin pixels turned grey by brightness (main skin tone = mid grey);
+   - `face.png`: eyes and mouth (non-skin pixels and inner dark lines inside the head);
+   - `outfit-N.png`: the base's own shirt/shorts pixels recoloured, plus sleeves, trouser legs
+     and shoes painted onto the arm/leg pixels of that same frame;
+   - `hair-N.png` and `accessory-N.png`: painted onto the head pixels / eye positions of each frame.
+   Edit the functions in that script (`outfitHoodie`, `hairLayer`, `cap`, ...) to change a style.
 
-Before generating a lot, test one file: replace `hair-0.png`, reload the game, and check it in
-the wardrobe and while walking in all 4 directions.
+Why not one PixelLab "variant" per layer? Each variant (`create_character_state`) costs 10-25
+generations and gets its own separately generated walk, so cutting layers out by comparing
+frames doesn't line up. Deriving the layers from one base is free and exact.
+
+To swap in a different base character: generate it the same way, replace the PNGs in
+`scripts/art-src/base-character/`, and re-run the script. It expects a light grey top and
+darker grey shorts (that's how it finds the clothes), and skin in warm tones.
+
+**Status (2026-11-21):** the owner did not like these code-drawn hair/outfit layers; they are a
+stopgap. Characters are moving to **preset characters** in the approved style (below). Mix-and-match
+layers may come back later with a PixelLab Tier 1 plan (`transfer_outfit` / `edit_animation`).
+
+## Preset characters (the approved style)
+
+Complete, ready-made characters players pick from: no tinting, no layers.
+
+- Files: `client/public/sprites/presets/<name>.png`, each a 640 x 512 sheet in **exactly the same
+  layout** as the layer sheets above (rows down/left/right/up, col 0 standing + 4 walk frames,
+  feet on y = 116). So the game can draw a preset sheet wherever it now draws a composed look.
+- Current presets: `sprout.png` (messy brown hair, green cropped jacket, red sneakers) and
+  `fern.png` (teal hair with a flower, mustard overalls, green rain boots). They are about
+  75-85 px tall.
+- Built by `node scripts/build-presets.mjs` from `scripts/art-src/presets/<name>/` (PixelLab
+  character export: `rotations/` = 8 standing views, `animations/walk4/<south|west|north>/`).
+  The standing frame is the walk frame with the legs closest together (the PixelLab standing
+  rotation is drawn slightly bigger than the walk, which would make the character jump in size).
+- How one is made (about 5-10 generations):
+  1. The first image: `create_image_pro_flash` 96 x 96 (5 gens, best quality), or
+     `create_image_pixen` 96 x 96 (1 gen, good enough for Fern). Prompt: the character + "Stardew
+     Valley and Scott Pilgrim pixel art style, chunky expressive proportions, bold clean dark
+     outlines, vibrant colors, warm golden-hour sunset rim light", transparent background, facing
+     the viewer.
+  2. `create_character_pro_flash` with that image as `source_image_id` / `first_frame_url`
+     (2 gens at 96 px: only the rotations are charged).
+  3. `animate_character` template `walking-4-frames`, one call each for south, west, north
+     (1 gen each).
+  4. Download `/mcp/characters/<id>/download`, unzip `Idle/rotations` and `Idle/animations` into
+     `scripts/art-src/presets/<name>/`, run the script.
+
+## Art direction (all new art)
+
+A mix of **Stardew Valley and Scott Pilgrim** pixel-art style, used only as a reference for the
+general style and vibe (never copy their characters or assets), in a **solarpunk** world with lots
+of whimsical foliage and mushrooms and **warm sunset lighting** as the default mood. Put
+"Stardew Valley and Scott Pilgrim pixel art style" plus "warm sunset light" in every PixelLab prompt.
+
+## Tiles and furniture (PixelLab)
+
+- **Tiles**: `client/public/tiles/tiles.png` is one row of 32 x 32 tiles in the order of `T` in
+  `client/src/world/townMap.ts`; the game scales them 2x. Built by `node scripts/build-tiles.mjs`
+  from the downloads in `scripts/art-src/tiles/` (four `create_topdown_tileset` sheets in standard
+  mode, 1 generation each: grass/path, water/grass, wood/carpet, ceramic/wood, plaster/brick; plus
+  `create_image_pixen` 32px sprites for the tree, mushrooms, door and doormat). `tileset.ts` draws
+  the old code tiles first, then swaps in each tile of the PNG once it loads.
+- **Furniture**: `client/public/furniture/furniture_N.png`, one file per piece at its slot size in
+  game pixels (64 per tile). Built by `node scripts/build-furniture.mjs` from
+  `scripts/art-src/furniture/frame_N.png`, which came from ONE `create_1_direction_object` call
+  (size 64, 16 `item_descriptions`, 10 generations; frames 14-15 are spare: mushroom lamp,
+  hanging plant). `furniture.ts` loads them itself and falls back to the code-drawn pieces.
+- To add a piece: generate it at 64 x 64, save it as the next `frame_N.png`, add its slot to
+  `SLOTS` in the script, and add it to `FURNITURE` (+ the SQL items) as usual.
 
 ## Keep it original
 
@@ -101,5 +165,6 @@ closely. Check the AI tool's terms allow commercial use of what you generate.
 
 ## Placeholder art
 
-`scripts/make-placeholder-sprites.mjs` draws the current placeholder files.
-**Don't run it after adding real art:** it overwrites every file in `client/public/sprites/`.
+`scripts/make-placeholder-sprites.mjs` draws the old code-only placeholder files.
+**Don't run it:** it overwrites every file in `client/public/sprites/`. Use
+`scripts/build-character-layers.mjs` instead.
