@@ -95,6 +95,7 @@ export function openShop(): void {
   if ($('wardrobe').style.display === 'flex') $('wardrobe-cancel').click();
   cancelDecorate();
   $('pets').style.display = 'none';
+  $('friends').style.display = 'none';
   errorEl.textContent = '';
   render();
   panel.style.display = 'flex';

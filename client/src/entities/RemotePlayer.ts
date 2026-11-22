@@ -3,6 +3,7 @@ import type { PlayerInfo } from '../net/network';
 import { sanitizeAvatar } from '../avatar/avatar';
 import type { Avatar } from '../avatar/avatar';
 import { animateCharacter, ensureAvatarTexture, setupCharacterSprite } from '../avatar/textures';
+import { headHeightFor } from '../avatar/sprites';
 import type { Direction } from '../avatar/sprites';
 import { NameTag } from './NameTag';
 import { PetFollower } from './PetFollower';
@@ -15,6 +16,7 @@ const STILL_DISTANCE = 1.5;
 // the server told us about, walking in the direction it is moving.
 export class RemotePlayer {
   readonly tag: NameTag;
+  readonly name: string;
   private sprite: Phaser.GameObjects.Sprite;
   private key: string;
   private facing: Direction = 'down';
@@ -29,7 +31,9 @@ export class RemotePlayer {
     this.key = ensureAvatarTexture(scene, sanitizeAvatar(info.avatar));
     this.sprite = scene.add.sprite(info.x, info.y, this.key, 0);
     setupCharacterSprite(this.sprite);
+    this.name = info.name;
     this.tag = new NameTag(scene, info.name);
+    this.tag.setHeadHeight(headHeightFor(sanitizeAvatar(info.avatar)));
     this.targetX = info.x;
     this.targetY = info.y;
     this.setPet(info.pet);
@@ -49,7 +53,9 @@ export class RemotePlayer {
   }
 
   setAvatar(avatar: Avatar): void {
-    this.key = ensureAvatarTexture(this.scene, sanitizeAvatar(avatar));
+    const a = sanitizeAvatar(avatar);
+    this.key = ensureAvatarTexture(this.scene, a);
+    this.tag.setHeadHeight(headHeightFor(a));
   }
 
   setTarget(x: number, y: number): void {

@@ -16,6 +16,26 @@ export interface VerifiedUser {
 
 const MAX_SPECIES = 5; // must match SPECIES in client/src/pets/species.ts and 005_pets.sql
 
+// Asks the database whether this player may enter ownerId's room (friends / public / blocked).
+// Uses the player's own login, so the database decides with its own rules.
+export async function canVisitRoom(token: string, ownerId: string): Promise<boolean> {
+  const url = process.env.SUPABASE_URL;
+  const anonKey = process.env.SUPABASE_ANON_KEY;
+  if (!url || !anonKey) return false;
+  try {
+    const res = await fetch(url + '/rest/v1/rpc/can_visit_room', {
+      method: 'POST',
+      headers: { apikey: anonKey, Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_owner: ownerId }),
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return false;
+    return (await res.json()) === true;
+  } catch {
+    return false;
+  }
+}
+
 export function authConfigured(): boolean {
   return Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY);
 }

@@ -187,6 +187,7 @@ export function openPets(): void {
   if ($('wardrobe').style.display === 'flex') $('wardrobe-cancel').click();
   cancelDecorate();
   $('shop').style.display = 'none';
+  $('friends').style.display = 'none';
   panel.style.display = 'flex';
   render();
 }

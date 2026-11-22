@@ -5,6 +5,7 @@
 // IMPORTANT: the option counts here must match server/src/avatar.ts.
 
 export interface Avatar {
+  preset: number; // 0 = build your own (the layers below); 1+ = a ready-made character
   skin: number;
   hairStyle: number;
   hairColor: number;
@@ -12,6 +13,12 @@ export interface Avatar {
   outfitColor: number;
   accessory: number;
 }
+
+// Ready-made characters (complete sprite sheets in client/public/sprites/presets/<file>.png).
+// Index 0 means "Custom": the character is built from the layer options below.
+// (Fern, preset 2, is being redrawn: add it back here and in server/src/avatar.ts when its sheet exists.)
+export const PRESETS = ['Custom', 'Sprout'];
+export const PRESET_FILES = ['', 'sprout'];
 
 export const SKIN_TONES = [0xf8d9b8, 0xf2c9a0, 0xd9a06f, 0xa86b43, 0x6b4228];
 export const HAIR_STYLES = ['Short', 'Long', 'Spiky', 'Bald'];
@@ -21,6 +28,7 @@ export const OUTFIT_COLORS = [0x3b6fd4, 0xd9534f, 0x4caf50, 0xf2c94c, 0x8e5ac8, 
 export const ACCESSORIES = ['None', 'Glasses', 'Cap', 'Headband'];
 
 export const DEFAULT_AVATAR: Avatar = {
+  preset: 0,
   skin: 1,
   hairStyle: 0,
   hairColor: 1,
@@ -30,6 +38,7 @@ export const DEFAULT_AVATAR: Avatar = {
 };
 
 export const AVATAR_LIMITS: Record<keyof Avatar, number> = {
+  preset: PRESETS.length,
   skin: SKIN_TONES.length,
   hairStyle: HAIR_STYLES.length,
   hairColor: HAIR_COLORS.length,
@@ -47,6 +56,7 @@ export interface Category {
 }
 
 export const CATEGORIES: Category[] = [
+  { key: 'preset', label: 'Character', names: PRESETS },
   { key: 'skin', label: 'Skin', colors: SKIN_TONES },
   { key: 'hairStyle', label: 'Hair', names: HAIR_STYLES },
   { key: 'hairColor', label: 'Hair color', colors: HAIR_COLORS },
@@ -75,6 +85,6 @@ export function isEmptyAvatar(raw: unknown): boolean {
 
 export function avatarKey(a: Avatar): string {
   return (
-    'avatar_' + [a.skin, a.hairStyle, a.hairColor, a.outfitStyle, a.outfitColor, a.accessory].join('_')
+    'avatar_' + [a.preset, a.skin, a.hairStyle, a.hairColor, a.outfitStyle, a.outfitColor, a.accessory].join('_')
   );
 }

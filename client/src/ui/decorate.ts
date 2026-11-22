@@ -140,6 +140,7 @@ export function openDecorate(initial: RoomLayout): void {
   if ($('wardrobe').style.display === 'flex') $('wardrobe-cancel').click();
   $('shop').style.display = 'none';
   $('pets').style.display = 'none';
+  $('friends').style.display = 'none';
   panel.style.display = 'flex';
   render();
 }

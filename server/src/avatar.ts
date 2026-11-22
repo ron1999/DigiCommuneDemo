@@ -1,5 +1,6 @@
 // IMPORTANT: these counts must match the option lists in client/src/avatar/avatar.ts.
 export interface Avatar {
+  preset: number; // 0 = custom (layers), 1+ = ready-made character
   skin: number;
   hairStyle: number;
   hairColor: number;
@@ -9,6 +10,7 @@ export interface Avatar {
 }
 
 const LIMITS: Record<keyof Avatar, number> = {
+  preset: 2, // Custom, Sprout (Fern comes back later as 2)
   skin: 5,
   hairStyle: 4,
   hairColor: 8,
@@ -18,6 +20,7 @@ const LIMITS: Record<keyof Avatar, number> = {
 };
 
 export const DEFAULT_AVATAR: Avatar = {
+  preset: 0,
   skin: 1,
   hairStyle: 0,
   hairColor: 1,

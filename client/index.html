@@ -150,8 +150,8 @@
         z-index: 15;
         touch-action: pan-y;
       }
-      #wardrobe-head, #decorate-head, #pets-head { display: flex; align-items: center; gap: 12px; }
-      #wardrobe-title, #decorate-title, #pets-title { font-size: 18px; font-weight: bold; }
+      #wardrobe-head, #decorate-head, #pets-head, #friends-head { display: flex; align-items: center; gap: 12px; }
+      #wardrobe-title, #decorate-title, #pets-title, #friends-title { font-size: 18px; font-weight: bold; }
       #wardrobe-preview {
         width: 96px;
         height: 96px;
@@ -159,7 +159,7 @@
         background: #33503a;
         border-radius: 8px;
       }
-      #wardrobe-body, #decorate-body, #pets-body {
+      #wardrobe-body, #decorate-body, #pets-body, #friends-body {
         flex: 1;
         overflow-y: auto;
         display: flex;
@@ -188,9 +188,9 @@
         cursor: pointer;
       }
       .w-swatch.selected { border-color: #fff; box-shadow: 0 0 0 2px #5cb85c; }
-      #wardrobe-error, #decorate-error, #pets-error { margin: 0; min-height: 16px; font-size: 13px; color: #ffb3b3; }
-      #wardrobe-actions, #decorate-actions, #pets-actions { display: flex; gap: 8px; }
-      #wardrobe-actions button, #decorate-actions button, #pets-actions button {
+      #wardrobe-error, #decorate-error, #pets-error, #friends-error { margin: 0; min-height: 16px; font-size: 13px; color: #ffb3b3; }
+      #wardrobe-actions, #decorate-actions, #pets-actions, #friends-actions { display: flex; gap: 8px; }
+      #wardrobe-actions button, #decorate-actions button, #pets-actions button, #friends-actions button {
         flex: 1;
         padding: 10px;
         border-radius: 8px;
@@ -200,7 +200,7 @@
       }
       #wardrobe-save, #decorate-save { background: #5cb85c; color: #fff; }
       #wardrobe-save:disabled, #decorate-save:disabled { opacity: 0.6; cursor: default; }
-      #wardrobe-cancel, #decorate-cancel, #pets-close { background: #4a4a4a; color: #fff; }
+      #wardrobe-cancel, #decorate-cancel, #pets-close, #friends-close { background: #4a4a4a; color: #fff; }
       @media (max-width: 700px) {
         .side-panel {
           top: auto;
@@ -217,6 +217,10 @@
       .d-opt canvas { width: 48px; height: 32px; image-rendering: pixelated; }
       #decorate-btn { display: none; }
       .pet-icon { image-rendering: pixelated; flex: none; }
+      .friend-row { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+      .friend-row.dim { opacity: 0.6; }
+      .friend-add { display: flex; gap: 6px; margin-bottom: 6px; }
+      #friend-name-input { flex: 1; min-width: 0; padding: 8px; border-radius: 6px; border: none; font-size: 15px; }
       .pet-cards { display: flex; gap: 8px; flex-wrap: wrap; }
       .pet-card {
         flex: 1 1 140px; display: flex; flex-direction: column; align-items: center; gap: 4px;
@@ -380,6 +384,7 @@
       <button id="claim-btn" type="button">Claim daily reward</button>
       <button id="shop-btn" type="button">Shop</button>
       <button id="wardrobe-btn" type="button">Wardrobe</button>
+      <button id="friends-btn" type="button">Friends</button>
       <button id="pets-btn" type="button">Pets</button>
       <button id="place-btn" type="button">Home</button>
       <button id="decorate-btn" type="button">Decorate</button>
@@ -408,6 +413,17 @@
       <div id="wardrobe-actions">
         <button id="wardrobe-cancel" type="button">Cancel</button>
         <button id="wardrobe-save" type="button">Save</button>
+      </div>
+    </div>
+
+    <div id="friends" class="side-panel">
+      <div id="friends-head">
+        <div id="friends-title">Friends</div>
+      </div>
+      <div id="friends-body"></div>
+      <p id="friends-error"></p>
+      <div id="friends-actions">
+        <button id="friends-close" type="button">Close</button>
       </div>
     </div>
 

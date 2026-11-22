@@ -17,6 +17,9 @@ import { NameTag } from '../entities/NameTag';
 import { PetFollower } from '../entities/PetFollower';
 import { activePet, onPetsChange } from '../pets/pets';
 import { petsPanel } from '../ui/petsPanel';
+import { friendsPanel } from '../ui/friendsPanel';
+import type { Where } from '../ui/friendsPanel';
+import { getRoom } from '../friends';
 import { RemotePlayer } from '../entities/RemotePlayer';
 import { connectToPlace } from '../net/network';
 import type { Place, PlayerInfo } from '../net/network';
@@ -28,7 +31,7 @@ import { getAccessToken, logOut, saveAvatar } from '../auth';
 import { loadMyRoom, myUserId, saveMyRoom } from '../room';
 import { session } from '../session';
 import { animateCharacter, ensureAvatarTexture, setupCharacterSprite } from '../avatar/textures';
-import { FEET_Y } from '../avatar/sprites';
+import { FEET_Y, headHeightFor } from '../avatar/sprites';
 import type { Direction } from '../avatar/sprites';
 import type { Avatar } from '../avatar/avatar';
 
@@ -41,17 +44,23 @@ export interface JoystickState {
 export interface PlaceData {
   place?: Place;
   room?: RoomLayout; // for homes: what the room looks like
+  mine?: boolean; // for homes: is it your own room?
+  ownerName?: string; // for homes: whose room it is
   spawn?: { x: number; y: number }; // tile to appear on (town only)
 }
 
 const SEND_INTERVAL_MS = 66; // about 15 position updates per second
 const KICKED_CODE = 4001; // the server uses this when the same account logs in elsewhere
+const REMOVED_CODE = 4002; // the room's owner asked us to leave
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
 export class TownScene extends Phaser.Scene {
   private place: Place = { kind: 'town' };
   private layout: RoomLayout | null = null; // homes only
+  private mine = false; // at home: is it our own room?
+  private ownerName = '';
+  private onlineWaiters: ((places: Record<string, Where>) => void)[] = [];
 
   private player!: Phaser.Physics.Arcade.Sprite;
   private playerKey = '';
@@ -96,6 +105,9 @@ export class TownScene extends Phaser.Scene {
     // The scene object is reused when travelling, so reset everything
     this.place = data.place ?? { kind: 'town' };
     this.layout = this.place.kind === 'home' ? (data.room ?? null) : null;
+    this.mine = this.place.kind === 'home' && data.mine !== false;
+    this.ownerName = data.ownerName ?? '';
+    this.onlineWaiters = [];
     this.room = null;
     this.remotes = new Map();
     this.reconnectAttempts = 0;
@@ -123,6 +135,7 @@ export class TownScene extends Phaser.Scene {
     body.setSize(36, 16);
     body.setOffset(46, FEET_Y - 14);
     this.localTag = new NameTag(this, session.name);
+    this.localTag.setHeadHeight(headHeightFor(session.avatar));
 
     this.buildPlace(data.spawn);
 
@@ -154,11 +167,13 @@ export class TownScene extends Phaser.Scene {
     // Wardrobe: preview changes on the character right away, save to the account on Save
     wardrobe.onPreview = (a: Avatar) => {
       this.playerKey = ensureAvatarTexture(this, a);
+      this.localTag.setHeadHeight(headHeightFor(a));
     };
     wardrobe.onSave = async (a: Avatar) => {
       await saveAvatar(a);
       session.avatar = a;
       this.playerKey = ensureAvatarTexture(this, a);
+      this.localTag.setHeadHeight(headHeightFor(a));
       await this.tellServerAboutMe();
     };
 
@@ -171,8 +186,16 @@ export class TownScene extends Phaser.Scene {
     decorate.onSave = async (layout) => {
       const saved = await saveMyRoom(layout);
       this.applyLayout(saved);
+      this.room?.send('roomChanged'); // visitors see the new furniture
       toast('Room saved!');
     };
+
+    // Friends panel
+    friendsPanel.onVisit = (ownerId) => void this.visitRoom(ownerId);
+    friendsPanel.queryOnline = (ids) => this.queryOnline(ids);
+    friendsPanel.guests = () =>
+      this.mine ? Array.from(this.remotes.entries()).map(([id, r]) => ({ id, name: r.name })) : [];
+    friendsPanel.onRemoveGuest = (id) => this.room?.send('removeVisitor', { id });
 
     this.setupTopbar();
 
@@ -193,6 +216,11 @@ export class TownScene extends Phaser.Scene {
       decorate.onPreview = null;
       decorate.onSave = null;
       petsPanel.onChanged = null;
+      friendsPanel.onVisit = null;
+      friendsPanel.queryOnline = null;
+      friendsPanel.guests = null;
+      friendsPanel.onRemoveGuest = null;
+      this.onlineWaiters.forEach((w) => w({}));
       stopListening();
       const room = this.room;
       this.room = null;
@@ -320,7 +348,7 @@ export class TownScene extends Phaser.Scene {
     const atHome = this.place.kind === 'home';
     placeBtn.textContent = atHome ? 'Town' : 'Home';
     placeBtn.onclick = () => (atHome ? this.goToTown() : void this.goHome());
-    decorateBtn.style.display = atHome ? 'inline-block' : 'none';
+    decorateBtn.style.display = atHome && this.mine ? 'inline-block' : 'none';
     decorateBtn.onclick = () => {
       if (this.layout) openDecorate(this.layout);
     };
@@ -333,14 +361,60 @@ export class TownScene extends Phaser.Scene {
     this.registry.set('status', 'Going home...');
     try {
       const [owner, room] = await Promise.all([myUserId(), loadMyRoom()]);
-      TownScene.townReturn = returnTile ?? this.currentTile();
-      this.scene.restart({ place: { kind: 'home', owner }, room } satisfies PlaceData);
+      this.rememberTownSpot(returnTile);
+      this.scene.restart({ place: { kind: 'home', owner }, room, mine: true } satisfies PlaceData);
     } catch (err) {
       console.error('Could not load your room', err);
       toast('Could not load your room: ' + (err as Error).message);
       this.travelling = false;
       this.updateStatus();
     }
+  }
+
+  // Visit someone else's room (the database and the server check you're allowed)
+  private async visitRoom(ownerId: string): Promise<void> {
+    if (this.travelling) return;
+    if (ownerId === (await myUserId())) return this.goHome();
+    this.travelling = true;
+    this.player.setVelocity(0, 0);
+    cancelDecorate();
+    this.registry.set('status', 'Visiting...');
+    try {
+      const { ownerName, layout } = await getRoom(ownerId);
+      this.rememberTownSpot();
+      this.scene.restart({
+        place: { kind: 'home', owner: ownerId },
+        room: layout,
+        mine: false,
+        ownerName,
+      } satisfies PlaceData);
+    } catch (err) {
+      toast((err as Error).message);
+      this.travelling = false;
+      this.updateStatus();
+    }
+  }
+
+  // Where to come back out in town (only when leaving the town itself)
+  private rememberTownSpot(tile?: { x: number; y: number }): void {
+    if (this.place.kind === 'town') TownScene.townReturn = tile ?? this.currentTile();
+  }
+
+  // Asks the server which of these accounts are online, and where
+  private queryOnline(ids: string[]): Promise<Record<string, Where>> {
+    const room = this.room;
+    if (!room) return Promise.reject(new Error('Not connected'));
+    return new Promise((resolve) => {
+      this.onlineWaiters.push(resolve);
+      room.send('online', { ids });
+      this.time.delayedCall(5000, () => {
+        const i = this.onlineWaiters.indexOf(resolve);
+        if (i >= 0) {
+          this.onlineWaiters.splice(i, 1);
+          resolve({});
+        }
+      });
+    });
   }
 
   private goToTown(): void {
@@ -419,6 +493,16 @@ export class TownScene extends Phaser.Scene {
       room.onMessage('pet', (m: { id: string; pet: unknown }) => {
         if (current()) this.remotes.get(m.id)?.setPet(m.pet);
       });
+      room.onMessage('online', (m: { places: Record<string, Where> }) => {
+        this.onlineWaiters.shift()?.(m.places ?? {});
+      });
+      room.onMessage('roomChanged', () => {
+        // The owner redecorated while we're visiting
+        if (!current() || this.mine || this.place.kind !== 'home') return;
+        void getRoom(this.place.owner)
+          .then(({ layout }) => this.applyLayout(layout))
+          .catch(() => undefined);
+      });
       room.onMessage('chat', (m: { id: string; text: string }) => {
         if (!current()) return;
         if (m.id === room.sessionId) this.localTag.say(m.text);
@@ -434,6 +518,11 @@ export class TownScene extends Phaser.Scene {
         if (this.shuttingDown || !current()) return;
         this.room = null;
         this.clearRemotes();
+        if (code === REMOVED_CODE) {
+          toast(this.ownerName + ' asked you to leave their room');
+          this.goToTown();
+          return;
+        }
         if (code === KICKED_CODE) {
           this.kicked = true;
           this.registry.set('status', session.name + ' is open in another window');
@@ -456,6 +545,12 @@ export class TownScene extends Phaser.Scene {
         return;
       }
       const msg = (err as { message?: string }).message;
+      if (code === 403 && this.place.kind === 'home') {
+        // Not allowed in (any more): back to town
+        toast(msg ?? 'You can\'t visit that room');
+        this.goToTown();
+        return;
+      }
       if ((code === 500 || code === 403) && msg) {
         this.registry.set('status', 'Server error: ' + msg);
       } else if (code === 'TIMEOUT') {
@@ -497,7 +592,7 @@ export class TownScene extends Phaser.Scene {
   }
 
   private updateStatus(): void {
-    const where = this.place.kind === 'home' ? 'Your room' : 'Town';
+    const where = this.place.kind === 'home' ? (this.mine ? 'Your room' : this.ownerName + "'s room") : 'Town';
     this.registry.set('status', session.name + ' | ' + where + ' | Online: ' + (this.remotes.size + 1));
   }
 

@@ -9,6 +9,7 @@ import { openShop } from './ui/shop';
 import { loadSpriteLayers } from './avatar/sprites';
 import { loadPets, pets } from './pets/pets';
 import { openPets } from './ui/petsPanel';
+import { openFriends, startFriendRequestChecks } from './ui/friendsPanel';
 import { isSupabaseConfigured } from './supabase';
 import {
   MIN_PASSWORD_LENGTH,
@@ -49,7 +50,29 @@ function setMode(next: 'login' | 'signup'): void {
   errorText.textContent = '';
 }
 
+// The game can't start on a 0x0 screen (e.g. a page loaded in a hidden tab):
+// wait until the game area actually has a size.
+function whenGameAreaHasSize(): Promise<void> {
+  const el = document.getElementById('game')!;
+  const ready = () => el.clientWidth > 0 && el.clientHeight > 0 && !document.hidden;
+  if (ready()) return Promise.resolve();
+  return new Promise((resolve) => {
+    const check = () => {
+      if (!ready()) return;
+      window.clearInterval(timer);
+      document.removeEventListener('visibilitychange', check);
+      resolve();
+    };
+    const timer = window.setInterval(check, 250);
+    document.addEventListener('visibilitychange', check);
+  });
+}
+
 function startGame(): void {
+  void whenGameAreaHasSize().then(createGame);
+}
+
+function createGame(): void {
   new Phaser.Game({
     type: Phaser.AUTO,
     parent: 'game',
@@ -81,6 +104,7 @@ async function enterGame(profile: Profile): Promise<void> {
   void initHud();
   // First visit: design your character, then pick a starter pet
   if (profile.isNew) openWardrobe(session.avatar, true);
+  startFriendRequestChecks();
   void loadPets()
     .then(() => {
       if (pets.list.length > 0) return;
@@ -127,6 +151,7 @@ authForm.addEventListener('submit', async (e) => {
 wardrobeBtn.addEventListener('click', () => openWardrobe(session.avatar));
 shopBtn.addEventListener('click', () => openShop());
 document.getElementById('pets-btn')!.addEventListener('click', () => openPets());
+document.getElementById('friends-btn')!.addEventListener('click', () => openFriends());
 
 logoutBtn.addEventListener('click', async () => {
   await logOut();

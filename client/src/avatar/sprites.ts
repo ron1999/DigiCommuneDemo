@@ -11,6 +11,7 @@
 
 import {
   ACCESSORIES,
+  PRESET_FILES,
   HAIR_STYLES,
   HAIR_COLORS,
   OUTFIT_COLORS,
@@ -29,8 +30,18 @@ export type Direction = (typeof DIRECTIONS)[number];
 // Where the feet are inside a frame, measured from the frame's top-left.
 // The game positions characters by their feet.
 export const FEET_Y = 116;
-// How far above the feet the top of the head is (for name tags and chat bubbles)
+// How far above the feet the top of the head is (for name tags and chat bubbles).
+// Ready-made characters are a bit shorter than the layered ones.
 export const HEAD_HEIGHT = 96;
+const PRESET_HEAD_HEIGHT = 84;
+
+export function headHeightFor(a: Avatar): number {
+  return a.preset > 0 && images.has(presetFile(a.preset)) ? PRESET_HEAD_HEIGHT : HEAD_HEIGHT;
+}
+
+function presetFile(preset: number): string {
+  return 'presets/' + PRESET_FILES[preset] + '.png';
+}
 
 const SPRITE_DIR = 'sprites/';
 
@@ -51,6 +62,7 @@ function allFiles(): string[] {
   OUTFIT_STYLES.forEach((_, i) => files.push(`outfit-${i}.png`));
   HAIR_STYLES.forEach((_, i) => files.push(`hair-${i}.png`));
   ACCESSORIES.forEach((_, i) => files.push(`accessory-${i}.png`));
+  PRESET_FILES.forEach((f, i) => f && files.push(presetFile(i)));
   return files;
 }
 
@@ -148,6 +160,14 @@ export function composeAvatarSheet(a: Avatar): HTMLCanvasElement {
   c.height = FRAME_SIZE * DIRECTIONS.length;
   const ctx = c.getContext('2d')!;
   ctx.imageSmoothingEnabled = false;
+
+  // A ready-made character is already a complete sheet
+  const preset = a.preset > 0 ? images.get(presetFile(a.preset)) : undefined;
+  if (preset) {
+    ctx.drawImage(preset, 0, 0);
+    sheets.set(key, c);
+    return c;
+  }
 
   for (const layer of layerFiles(a)) {
     const img = images.get(layer.file);

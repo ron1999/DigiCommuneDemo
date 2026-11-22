@@ -1,5 +1,6 @@
 import { Room, Client, ServerError } from 'colyseus';
-import { verifyToken, type PetInfo, type VerifiedUser } from './auth';
+import { canVisitRoom, verifyToken, type PetInfo, type VerifiedUser } from './auth';
+import { lookup, setOffline, setOnline } from './presence';
 import { sanitizeAvatar, type Avatar } from './avatar';
 
 // Must match the client's map size (40 x 30 tiles of 64px, client/src/config.ts) and spawn point.
@@ -12,6 +13,8 @@ const MAX_CHAT_LENGTH = 120;
 const CHAT_COOLDOWN_MS = 800;
 const AVATAR_COOLDOWN_MS = 500;
 const KICKED_CODE = 4001; // same account logged in somewhere else
+const REMOVED_CODE = 4002; // the room's owner asked this visitor to leave
+const MAX_ONLINE_QUERY = 200;
 
 interface PlayerData {
   id: string;
@@ -66,15 +69,37 @@ export class TownRoom extends Room {
       console.log('Join rejected: invalid or expired login token');
       throw new ServerError(401, 'Invalid or expired login');
     }
-    if (this.ownerId && user.id !== this.ownerId) {
-      console.log('Join rejected: ' + user.username + ' tried to enter someone else\'s room');
-      throw new ServerError(403, 'That room is private');
+    if (this.ownerId && user.id !== this.ownerId && !(await canVisitRoom(token, this.ownerId))) {
+      console.log('Join rejected: ' + user.username + ' may not visit this room');
+      throw new ServerError(403, 'You can\'t visit that room');
     }
     console.log('Login OK for ' + user.username);
     return user;
   }
 
   onCreate(options: any): void {
+    // Which of your friends are online? (the client sends the ids of its friends)
+    this.onMessage('online', (client: Client, message: any) => {
+      const ids = Array.isArray(message?.ids)
+        ? message.ids.filter((x: unknown) => typeof x === 'string').slice(0, MAX_ONLINE_QUERY)
+        : [];
+      client.send('online', { places: lookup(ids) });
+    });
+
+    // The owner saved new furniture: tell visitors to reload the room
+    this.onMessage('roomChanged', (client: Client) => {
+      if (this.ownerId && this.userBySession.get(client.sessionId) === this.ownerId) {
+        this.broadcast('roomChanged', {}, { except: client });
+      }
+    });
+
+    // The owner asks a visitor to leave
+    this.onMessage('removeVisitor', (client: Client, message: any) => {
+      if (!this.ownerId || this.userBySession.get(client.sessionId) !== this.ownerId) return;
+      const target = typeof message?.id === 'string' ? this.clients.getById(message.id) : undefined;
+      if (target && target.sessionId !== client.sessionId) target.leave(REMOVED_CODE);
+    });
+
     if (typeof options?.owner === 'string' && options.owner) {
       this.ownerId = options.owner;
       this.bounds = HOME;
@@ -168,6 +193,7 @@ export class TownRoom extends Room {
     this.players.set(client.sessionId, player);
     this.sessionByUser.set(auth.id, client.sessionId);
     this.userBySession.set(client.sessionId, auth.id);
+    setOnline(auth.id, client.sessionId, !this.ownerId ? 'town' : auth.id === this.ownerId ? 'home' : 'visiting');
     console.log(player.name + ' joined (' + this.players.size + ' online)');
   }
 
@@ -183,6 +209,7 @@ export class TownRoom extends Room {
     if (userId && this.sessionByUser.get(userId) === client.sessionId) {
       this.sessionByUser.delete(userId);
     }
+    if (userId) setOffline(userId, client.sessionId);
 
     this.broadcast('left', { id: client.sessionId });
     if (p) console.log(p.name + ' left (' + this.players.size + ' online)');
