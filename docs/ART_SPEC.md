@@ -108,6 +108,48 @@ darker grey shorts (that's how it finds the clothes), and skin in warm tones.
 stopgap. Characters are moving to **preset characters** in the approved style (below). Mix-and-match
 layers may come back later with a PixelLab Tier 1 plan (`transfer_outfit` / `edit_animation`).
 
+## Body types (2026-11-22)
+
+The character system is built on Sprout's style. Per gender (male, female) there are sliders for:
+
+- **Build** (5 steps, real PixelLab art): slim, lean, average, stocky, heavyset.
+- **Muscle** (2 steps, real art): soft, muscular.
+- **Height** (5 steps, made by script): -12, -6, 0, +6, +12 px from the average height
+  (97 px, feet to top of head). `scripts/body-shapes.mjs` adds or removes pixel rows in the legs
+  (60%) and torso (40%). The game applies it to the stacked sheet, so every layer stretches with
+  the same rows and stays lined up.
+
+That gives 20 bodies: `client/public/sprites/bodies/<gender>-<build>[-muscular].png`, each a
+640 x 512 sheet in the same layout as the layer sheets (rows down/left/right/up, col 0 standing +
+4 walk frames, feet on y = 116, standing frame exactly 97 px tall). Bodies are bald (hair is a
+layer) in a plain white tank top and grey shorts (underwear), one warm skin tone for now.
+
+How they were made (about 190 generations in total):
+1. One `create_image_pro_flash` 208 x 128 image per gender per muscle (5 figures, slim to
+   heavyset, same height), styled on Sprout and the approved lineups; then one
+   `edit_image_pro_flash` per image to make everyone bald (6 generations each).
+   Sources: `scripts/art-src/bodies/<gender>-builds.png` and `<gender>-muscular.png`
+   (the versions with hair are in `with-hair/`).
+2. `node scripts/build-body-bases.mjs` cuts them into
+   `scripts/art-src/bodies/base/<name>.png` (96 x 128, feet y = 116, height 97).
+3. Each base became a PixelLab character (`create_character_pro_flash` with the base as
+   `first_frame_url`, about 2 generations) and got the template walk `walking-4-frames` for
+   south, west and north (3 generations). Character ids: `scripts/art-src/bodies/characters.json`.
+4. `node scripts/build-body-sheets.mjs` downloads the walks (kept in
+   `scripts/art-src/bodies/walk/<name>/`), cleans the walk's shading with
+   `scripts/walk-shading.mjs` (the template walk paints the back limbs in muddy dark reds and
+   sometimes puts cloth colours on bare legs; every pixel is mapped back onto the standing art's
+   own colours with shadow and highlight limits), normalizes the height and writes the sheets.
+
+Clothing will be fitted to 6 key bodies only (per gender: slim, average, heavyset; lean -> slim,
+stocky -> average, soft and muscular share a fit), to keep PixelLab costs at about 180
+generations per item instead of 600. Head items (hair, hats, glasses, bandanas, piercings)
+are planned as one sheet per gender placed per frame, still to be tested.
+
+Every prompt starts with the owner's words, exactly: "Please no AI slop or generic vibe. I want
+it look like if stardew valley & scott pilgrims pixel art styles had a baby, not an exact copy
+of either."
+
 ## Preset characters (the approved style)
 
 Complete, ready-made characters players pick from: no tinting, no layers.

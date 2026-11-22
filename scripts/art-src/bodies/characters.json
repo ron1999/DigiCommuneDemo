@@ -1,0 +1,23 @@
+{
+  "_about": "PixelLab character ids for the 20 bald body bases (create_character_pro_flash from scripts/art-src/bodies/base/<name>.png). Walk = template walking-4-frames, south/west/north, animation name walk4.",
+  "male-slim": "96d2da17-b5b4-4485-a803-e141ddf519ed",
+  "male-lean": "4ea8f2dd-4f7f-43c4-bbae-3679991d9c13",
+  "male-average": "e94c4757-ff2b-4815-82b0-a1095f8585f4",
+  "male-stocky": "460600b6-cf14-49f5-a27f-74622a79e34d",
+  "male-heavyset": "84e9f47a-bc60-408a-8e96-2f11dcfd9862",
+  "male-slim-muscular": "4cba4f1e-806a-45ff-aaa1-632f5abdb86e",
+  "male-lean-muscular": "8b111016-8617-4189-a83d-2eb9cd2b7312",
+  "male-average-muscular": "0884510b-5e9a-4497-9899-8dda83d33b2a",
+  "male-stocky-muscular": "cfde9424-90ba-45fa-9d43-002786145ade",
+  "male-heavyset-muscular": "ceef77a5-ec42-49d7-8485-6b76be7fdf59",
+  "female-slim": "dfc516ce-edc9-4821-a85f-b241ef1cf5a7",
+  "female-lean": "9b78d89f-47ee-4b71-8f64-649fa38dbbc8",
+  "female-average": "93f64fa1-dd0d-4662-b2ef-592c14091cb3",
+  "female-stocky": "af537ff9-e1ba-44d3-ab9b-d07807efd4a0",
+  "female-heavyset": "06491ec7-0005-4e51-b95b-197395843edd",
+  "female-slim-muscular": "4987357c-5b4b-4df2-ba78-8823c511947b",
+  "female-lean-muscular": "1caea88b-0c0f-4239-8846-25ea33440e7b",
+  "female-average-muscular": "8dd264c0-8d4c-41b0-93b4-3dead36cb756",
+  "female-stocky-muscular": "86cd6d1b-8ead-4a5e-8067-54e6ecc753c1",
+  "female-heavyset-muscular": "42020334-0557-4fd6-852f-645e437724ba"
+}
