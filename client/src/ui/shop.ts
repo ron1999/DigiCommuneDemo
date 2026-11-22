@@ -94,6 +94,7 @@ export function openShop(): void {
   // Close the wardrobe first (this also puts the character's look back)
   if ($('wardrobe').style.display === 'flex') $('wardrobe-cancel').click();
   cancelDecorate();
+  $('pets').style.display = 'none';
   errorEl.textContent = '';
   render();
   panel.style.display = 'flex';

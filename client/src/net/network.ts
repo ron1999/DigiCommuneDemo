@@ -1,5 +1,6 @@
 import { Client, Room } from 'colyseus.js';
 import type { Avatar } from '../avatar/avatar';
+import type { PetInfo } from '../pets/species';
 
 // Where a player is: the shared town, or someone's home (by account id)
 export type Place = { kind: 'town' } | { kind: 'home'; owner: string };
@@ -10,6 +11,7 @@ export interface PlayerInfo {
   x: number;
   y: number;
   avatar: Avatar;
+  pet?: PetInfo | null;
 }
 
 // In development the server runs on the same computer (or the same Wi-Fi network

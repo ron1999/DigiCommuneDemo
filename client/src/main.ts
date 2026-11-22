@@ -3,10 +3,12 @@ import { TownScene } from './scenes/TownScene';
 import { UIScene } from './scenes/UIScene';
 import { session } from './session';
 import { initChat } from './ui/chat';
-import { openWardrobe } from './ui/wardrobe';
+import { openWardrobe, wardrobe } from './ui/wardrobe';
 import { initHud } from './ui/hud';
 import { openShop } from './ui/shop';
 import { loadSpriteLayers } from './avatar/sprites';
+import { loadPets, pets } from './pets/pets';
+import { openPets } from './ui/petsPanel';
 import { isSupabaseConfigured } from './supabase';
 import {
   MIN_PASSWORD_LENGTH,
@@ -77,8 +79,15 @@ async function enterGame(profile: Profile): Promise<void> {
   initChat();
   startGame();
   void initHud();
-  // First visit: let them design their character right away
+  // First visit: design your character, then pick a starter pet
   if (profile.isNew) openWardrobe(session.avatar, true);
+  void loadPets()
+    .then(() => {
+      if (pets.list.length > 0) return;
+      if (profile.isNew) wardrobe.onClosed = openPets;
+      else openPets();
+    })
+    .catch((err) => console.error('Could not load pets', err));
 }
 
 tabLogin.addEventListener('click', () => setMode('login'));
@@ -117,6 +126,7 @@ authForm.addEventListener('submit', async (e) => {
 
 wardrobeBtn.addEventListener('click', () => openWardrobe(session.avatar));
 shopBtn.addEventListener('click', () => openShop());
+document.getElementById('pets-btn')!.addEventListener('click', () => openPets());
 
 logoutBtn.addEventListener('click', async () => {
   await logOut();

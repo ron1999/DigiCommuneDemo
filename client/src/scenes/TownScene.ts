@@ -14,6 +14,9 @@ import {
 } from '../world/rooms';
 import type { RoomLayout } from '../world/rooms';
 import { NameTag } from '../entities/NameTag';
+import { PetFollower } from '../entities/PetFollower';
+import { activePet, onPetsChange } from '../pets/pets';
+import { petsPanel } from '../ui/petsPanel';
 import { RemotePlayer } from '../entities/RemotePlayer';
 import { connectToPlace } from '../net/network';
 import type { Place, PlayerInfo } from '../net/network';
@@ -54,6 +57,8 @@ export class TownScene extends Phaser.Scene {
   private playerKey = '';
   private facing: Direction = 'down';
   private localTag!: NameTag;
+  private pet: PetFollower | null = null;
+  private petKey = ''; // which pet the follower shows, to spot changes
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private wasd!: Record<string, Phaser.Input.Keyboard.Key>;
 
@@ -121,6 +126,13 @@ export class TownScene extends Phaser.Scene {
 
     this.buildPlace(data.spawn);
 
+    // Your pet follows you (pets may finish loading after the scene starts)
+    this.pet = null;
+    this.petKey = '';
+    this.syncPet();
+    const stopListening = onPetsChange(() => this.syncPet());
+    petsPanel.onChanged = () => void this.tellServerAboutMe();
+
     const cam = this.cameras.main;
     cam.startFollow(this.player, true, 0.12, 0.12);
     cam.setZoom(CAMERA_ZOOM);
@@ -147,9 +159,7 @@ export class TownScene extends Phaser.Scene {
       await saveAvatar(a);
       session.avatar = a;
       this.playerKey = ensureAvatarTexture(this, a);
-      // The server re-reads our saved look from the database, so it can't be faked
-      const token = await getAccessToken();
-      if (token) this.room?.send('avatar', { token });
+      await this.tellServerAboutMe();
     };
 
     // Decorate (homes only): preview furniture right away, save on Save
@@ -182,12 +192,36 @@ export class TownScene extends Phaser.Scene {
       wardrobe.onSave = null;
       decorate.onPreview = null;
       decorate.onSave = null;
+      petsPanel.onChanged = null;
+      stopListening();
       const room = this.room;
       this.room = null;
       room?.leave();
     });
 
     void this.connect();
+  }
+
+  // The server re-reads our saved look and pet from the database, so they can't be faked
+  private async tellServerAboutMe(): Promise<void> {
+    const token = await getAccessToken();
+    if (token) this.room?.send('avatar', { token });
+  }
+
+  // Makes the follower match the active pet in the pets list
+  private syncPet(): void {
+    const p = activePet();
+    const key = p ? p.species + ':' + p.name : '';
+    if (key === this.petKey) return;
+    this.petKey = key;
+    if (!p) {
+      this.pet?.destroy();
+      this.pet = null;
+    } else if (this.pet) {
+      this.pet.setPet(p);
+    } else {
+      this.pet = new PetFollower(this, p, this.player.x - 40, this.player.y + 8);
+    }
   }
 
   // ---------- building the town or a room ----------
@@ -382,6 +416,9 @@ export class TownScene extends Phaser.Scene {
       room.onMessage('avatar', (m: { id: string; avatar: Avatar }) => {
         if (current()) this.remotes.get(m.id)?.setAvatar(m.avatar);
       });
+      room.onMessage('pet', (m: { id: string; pet: unknown }) => {
+        if (current()) this.remotes.get(m.id)?.setPet(m.pet);
+      });
       room.onMessage('chat', (m: { id: string; text: string }) => {
         if (!current()) return;
         if (m.id === room.sessionId) this.localTag.say(m.text);
@@ -464,7 +501,7 @@ export class TownScene extends Phaser.Scene {
     this.registry.set('status', session.name + ' | ' + where + ' | Online: ' + (this.remotes.size + 1));
   }
 
-  update(time: number): void {
+  update(time: number, delta: number): void {
     let vx = 0;
     let vy = 0;
 
@@ -500,7 +537,8 @@ export class TownScene extends Phaser.Scene {
       this.sendPosition();
     }
 
-    this.remotes.forEach((r) => r.update());
+    this.pet?.update(this.player.x, this.player.y, delta);
+    this.remotes.forEach((r) => r.update(delta));
     if (vx !== 0 || vy !== 0) this.checkDoors();
   }
 }

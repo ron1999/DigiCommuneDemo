@@ -139,6 +139,7 @@ export function openDecorate(initial: RoomLayout): void {
   // Only one side panel at a time
   if ($('wardrobe').style.display === 'flex') $('wardrobe-cancel').click();
   $('shop').style.display = 'none';
+  $('pets').style.display = 'none';
   panel.style.display = 'flex';
   render();
 }

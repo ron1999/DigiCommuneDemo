@@ -5,6 +5,8 @@ import type { Avatar } from '../avatar/avatar';
 import { animateCharacter, ensureAvatarTexture, setupCharacterSprite } from '../avatar/textures';
 import type { Direction } from '../avatar/sprites';
 import { NameTag } from './NameTag';
+import { PetFollower } from './PetFollower';
+import { sanitizePet } from '../pets/species';
 
 // Closer than this (in pixels) to the latest position counts as standing still
 const STILL_DISTANCE = 1.5;
@@ -18,6 +20,7 @@ export class RemotePlayer {
   private facing: Direction = 'down';
   private targetX: number;
   private targetY: number;
+  private pet: PetFollower | null = null;
 
   constructor(
     private scene: Phaser.Scene,
@@ -29,6 +32,20 @@ export class RemotePlayer {
     this.tag = new NameTag(scene, info.name);
     this.targetX = info.x;
     this.targetY = info.y;
+    this.setPet(info.pet);
+  }
+
+  // Show, change, or remove the pet following this player
+  setPet(raw: unknown): void {
+    const pet = sanitizePet(raw);
+    if (!pet) {
+      this.pet?.destroy();
+      this.pet = null;
+    } else if (this.pet) {
+      this.pet.setPet(pet);
+    } else {
+      this.pet = new PetFollower(this.scene, pet, this.sprite.x - 40, this.sprite.y + 8);
+    }
   }
 
   setAvatar(avatar: Avatar): void {
@@ -40,7 +57,7 @@ export class RemotePlayer {
     this.targetY = y;
   }
 
-  update(): void {
+  update(deltaMs: number): void {
     let dx = this.targetX - this.sprite.x;
     let dy = this.targetY - this.sprite.y;
     if (Math.hypot(dx, dy) < STILL_DISTANCE) {
@@ -54,10 +71,12 @@ export class RemotePlayer {
     this.facing = animateCharacter(this.sprite, this.key, dx, dy, this.facing);
     this.sprite.setDepth(this.sprite.y);
     this.tag.follow(this.sprite.x, this.sprite.y);
+    this.pet?.update(this.sprite.x, this.sprite.y, deltaMs);
   }
 
   destroy(): void {
     this.sprite.destroy();
     this.tag.destroy();
+    this.pet?.destroy();
   }
 }

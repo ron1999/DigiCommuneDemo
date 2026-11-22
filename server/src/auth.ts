@@ -2,11 +2,19 @@
 // pretend to be another player. The username comes from the database,
 // never from the client.
 
+export interface PetInfo {
+  species: number;
+  name: string;
+}
+
 export interface VerifiedUser {
   id: string;
   username: string;
   avatar: unknown; // raw value from the database; sanitize before use
+  pet: PetInfo | null; // the pet following them, if any
 }
+
+const MAX_SPECIES = 5; // must match SPECIES in client/src/pets/species.ts and 005_pets.sql
 
 export function authConfigured(): boolean {
   return Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY);
@@ -41,5 +49,30 @@ export async function verifyToken(token: string): Promise<VerifiedUser | null> {
   const username = rows[0]?.username;
   if (!username) return null;
 
-  return { id: user.id, username, avatar: rows[0]?.avatar };
+  return { id: user.id, username, avatar: rows[0]?.avatar, pet: await fetchActivePet(url, headers, user.id) };
+}
+
+// The player's active pet. Any problem (e.g. 005_pets.sql not run yet) just means "no pet".
+async function fetchActivePet(
+  url: string,
+  headers: Record<string, string>,
+  userId: string,
+): Promise<PetInfo | null> {
+  try {
+    const res = await fetch(
+      url + '/rest/v1/pets?select=species,name&active=eq.true&owner_id=eq.' + encodeURIComponent(userId),
+      { headers, signal: AbortSignal.timeout(8000) },
+    );
+    if (!res.ok) return null;
+    const rows = (await res.json()) as { species?: unknown; name?: unknown }[];
+    const row = rows[0];
+    if (!row) return null;
+    const species = row.species;
+    const name = row.name;
+    if (typeof species !== 'number' || !Number.isInteger(species) || species < 0 || species > MAX_SPECIES) return null;
+    if (typeof name !== 'string' || name.length === 0 || name.length > 16) return null;
+    return { species, name };
+  } catch {
+    return null;
+  }
 }

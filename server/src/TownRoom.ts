@@ -1,5 +1,5 @@
 import { Room, Client, ServerError } from 'colyseus';
-import { verifyToken, type VerifiedUser } from './auth';
+import { verifyToken, type PetInfo, type VerifiedUser } from './auth';
 import { sanitizeAvatar, type Avatar } from './avatar';
 
 // Must match the client's map size (40 x 30 tiles of 64px, client/src/config.ts) and spawn point.
@@ -19,6 +19,7 @@ interface PlayerData {
   x: number;
   y: number;
   avatar: Avatar;
+  pet: PetInfo | null;
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -107,7 +108,7 @@ export class TownRoom extends Room {
       this.broadcast('chat', { id: client.sessionId, text });
     });
 
-    // Player changed their look in the wardrobe (the client saves it to the database itself)
+    // Player changed their look or their pet (the client saves it to the database itself)
     // The client only sends its login token; we read the saved look from the database,
     // which has already checked that the player owns every item.
     this.onMessage('avatar', async (client: Client, message: any) => {
@@ -125,6 +126,9 @@ export class TownRoom extends Room {
         if (!user || user.id !== this.userBySession.get(client.sessionId)) return;
         p.avatar = sanitizeAvatar(user.avatar);
         this.broadcast('avatar', { id: p.id, avatar: p.avatar }, { except: client });
+        // The pet may have changed too (the client sends 'avatar' after any change)
+        p.pet = user.pet;
+        this.broadcast('pet', { id: p.id, pet: p.pet }, { except: client });
       } catch (err) {
         console.error('Avatar refresh failed:', err);
       }
@@ -159,6 +163,7 @@ export class TownRoom extends Room {
       x: this.bounds.spawnX,
       y: this.bounds.spawnY,
       avatar: sanitizeAvatar(auth.avatar),
+      pet: auth.pet,
     };
     this.players.set(client.sessionId, player);
     this.sessionByUser.set(auth.id, client.sessionId);

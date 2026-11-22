@@ -18,6 +18,7 @@ const cancelBtn = $<HTMLButtonElement>('wardrobe-cancel');
 export const wardrobe = {
   onPreview: null as ((avatar: Avatar) => void) | null,
   onSave: null as ((avatar: Avatar) => Promise<void>) | null,
+  onClosed: null as (() => void) | null, // after Save or Cancel
 };
 
 let saved: Avatar;
@@ -101,6 +102,9 @@ function build(): void {
 
 function close(): void {
   panel.style.display = 'none';
+  const after = wardrobe.onClosed;
+  wardrobe.onClosed = null;
+  after?.();
 }
 
 export function openWardrobe(initial: Avatar, firstTime = false): void {
@@ -110,6 +114,7 @@ export function openWardrobe(initial: Avatar, firstTime = false): void {
   title.textContent = firstTime ? 'Create your character' : 'Wardrobe';
   errorText.textContent = '';
   $('shop').style.display = 'none';
+  $('pets').style.display = 'none';
   cancelDecorate();
   panel.style.display = 'flex';
   refreshSelection();

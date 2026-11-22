@@ -150,8 +150,8 @@
         z-index: 15;
         touch-action: pan-y;
       }
-      #wardrobe-head, #decorate-head { display: flex; align-items: center; gap: 12px; }
-      #wardrobe-title, #decorate-title { font-size: 18px; font-weight: bold; }
+      #wardrobe-head, #decorate-head, #pets-head { display: flex; align-items: center; gap: 12px; }
+      #wardrobe-title, #decorate-title, #pets-title { font-size: 18px; font-weight: bold; }
       #wardrobe-preview {
         width: 96px;
         height: 96px;
@@ -159,7 +159,7 @@
         background: #33503a;
         border-radius: 8px;
       }
-      #wardrobe-body, #decorate-body {
+      #wardrobe-body, #decorate-body, #pets-body {
         flex: 1;
         overflow-y: auto;
         display: flex;
@@ -188,9 +188,9 @@
         cursor: pointer;
       }
       .w-swatch.selected { border-color: #fff; box-shadow: 0 0 0 2px #5cb85c; }
-      #wardrobe-error, #decorate-error { margin: 0; min-height: 16px; font-size: 13px; color: #ffb3b3; }
-      #wardrobe-actions, #decorate-actions { display: flex; gap: 8px; }
-      #wardrobe-actions button, #decorate-actions button {
+      #wardrobe-error, #decorate-error, #pets-error { margin: 0; min-height: 16px; font-size: 13px; color: #ffb3b3; }
+      #wardrobe-actions, #decorate-actions, #pets-actions { display: flex; gap: 8px; }
+      #wardrobe-actions button, #decorate-actions button, #pets-actions button {
         flex: 1;
         padding: 10px;
         border-radius: 8px;
@@ -200,7 +200,7 @@
       }
       #wardrobe-save, #decorate-save { background: #5cb85c; color: #fff; }
       #wardrobe-save:disabled, #decorate-save:disabled { opacity: 0.6; cursor: default; }
-      #wardrobe-cancel, #decorate-cancel { background: #4a4a4a; color: #fff; }
+      #wardrobe-cancel, #decorate-cancel, #pets-close { background: #4a4a4a; color: #fff; }
       @media (max-width: 700px) {
         .side-panel {
           top: auto;
@@ -216,6 +216,21 @@
       .d-opt { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; min-width: 64px; }
       .d-opt canvas { width: 48px; height: 32px; image-rendering: pixelated; }
       #decorate-btn { display: none; }
+      .pet-icon { image-rendering: pixelated; flex: none; }
+      .pet-cards { display: flex; gap: 8px; flex-wrap: wrap; }
+      .pet-card {
+        flex: 1 1 140px; display: flex; flex-direction: column; align-items: center; gap: 4px;
+        padding: 10px; border-radius: 10px; border: 2px solid transparent;
+        background: rgba(255, 255, 255, 0.08); color: #fff; cursor: pointer; text-align: center; font-size: 12px;
+      }
+      .pet-card strong { font-size: 15px; }
+      .pet-card.selected { border-color: #5cb85c; background: rgba(92, 184, 92, 0.2); }
+      #pet-name-input { width: 100%; box-sizing: border-box; padding: 8px; border-radius: 6px; border: none; font-size: 15px; margin-bottom: 10px; }
+      .pet-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+      .pet-info { display: flex; flex-direction: column; flex: 1; min-width: 120px; font-size: 12px; }
+      .pet-info strong { font-size: 15px; }
+      .pet-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 8px; }
+      .pet-cell { display: flex; flex-direction: column; align-items: center; font-size: 12px; padding: 6px; border-radius: 8px; background: rgba(255, 255, 255, 0.06); }
       /* Locked wardrobe options */
       .w-btn.locked, .w-swatch.locked { opacity: 0.4; }
 
@@ -365,6 +380,7 @@
       <button id="claim-btn" type="button">Claim daily reward</button>
       <button id="shop-btn" type="button">Shop</button>
       <button id="wardrobe-btn" type="button">Wardrobe</button>
+      <button id="pets-btn" type="button">Pets</button>
       <button id="place-btn" type="button">Home</button>
       <button id="decorate-btn" type="button">Decorate</button>
       <button id="logout" type="button">Log out</button>
@@ -392,6 +408,17 @@
       <div id="wardrobe-actions">
         <button id="wardrobe-cancel" type="button">Cancel</button>
         <button id="wardrobe-save" type="button">Save</button>
+      </div>
+    </div>
+
+    <div id="pets" class="side-panel">
+      <div id="pets-head">
+        <div id="pets-title">Pets</div>
+      </div>
+      <div id="pets-body"></div>
+      <p id="pets-error"></p>
+      <div id="pets-actions">
+        <button id="pets-close" type="button">Close</button>
       </div>
     </div>
 
