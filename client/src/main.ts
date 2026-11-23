@@ -6,7 +6,7 @@ import { initChat } from './ui/chat';
 import { openWardrobe, wardrobe } from './ui/wardrobe';
 import { initHud } from './ui/hud';
 import { openShop } from './ui/shop';
-import { loadSpriteLayers } from './avatar/sprites';
+import { loadAvatarArt } from './avatar/sprites';
 import { loadPets, pets } from './pets/pets';
 import { openPets } from './ui/petsPanel';
 import { openFriends, startFriendRequestChecks } from './ui/friendsPanel';
@@ -92,8 +92,8 @@ function createGame(): void {
 }
 
 async function enterGame(profile: Profile): Promise<void> {
-  // Character art must be loaded before the game or wardrobe draws anyone
-  await loadSpriteLayers();
+  // Your own character's art first, so you never appear blank (others load as they appear)
+  await loadAvatarArt(profile.avatar);
   session.name = profile.username;
   session.avatar = profile.avatar;
   authPanel.style.display = 'none';

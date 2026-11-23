@@ -153,7 +153,7 @@
       #wardrobe-head, #decorate-head, #pets-head, #friends-head, #prop-head { display: flex; align-items: center; gap: 12px; }
       #wardrobe-title, #decorate-title, #pets-title, #friends-title, #prop-title { font-size: 18px; font-weight: bold; }
       #wardrobe-preview {
-        width: 96px;
+        width: 72px;
         height: 96px;
         image-rendering: pixelated;
         background: #33503a;
@@ -167,6 +167,8 @@
         gap: 12px;
         -webkit-overflow-scrolling: touch;
       }
+      .w-tabs { display: flex; gap: 6px; position: sticky; top: 0; background: inherit; padding-bottom: 4px; z-index: 1; }
+      .w-tabs .w-btn { flex: 1; }
       .w-label { font-size: 13px; opacity: 0.8; margin-bottom: 4px; }
       .w-options { display: flex; flex-wrap: wrap; gap: 6px; }
       .w-btn {
@@ -446,7 +448,7 @@
 
     <div id="wardrobe" class="side-panel">
       <div id="wardrobe-head">
-        <canvas id="wardrobe-preview" width="128" height="128"></canvas>
+        <canvas id="wardrobe-preview" width="96" height="128"></canvas>
         <div id="wardrobe-title">Wardrobe</div>
       </div>
       <div id="wardrobe-body"></div>

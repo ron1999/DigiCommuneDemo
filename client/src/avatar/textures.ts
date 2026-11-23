@@ -10,15 +10,26 @@ import {
   composeAvatarSheet,
   directionFor,
   frameIndex,
+  onSheetUpdated,
 } from './sprites';
 import type { Direction } from './sprites';
 
 const WALK_FPS = 8;
 
+// A look's art may still be loading when its texture is made; when it arrives the sheet
+// canvas is redrawn, and the texture must be sent to the graphics card again.
+const managers = new Set<Phaser.Textures.TextureManager>();
+onSheetUpdated((key) => {
+  managers.forEach((m) => {
+    if (m.exists(key)) (m.get(key) as Phaser.Textures.CanvasTexture).refresh();
+  });
+});
+
 // Returns the texture name for this look, creating the texture and its walk
 // animations the first time it is needed.
 export function ensureAvatarTexture(scene: Phaser.Scene, avatar: Avatar): string {
   const key = avatarKey(avatar);
+  managers.add(scene.textures);
   if (scene.textures.exists(key)) return key;
 
   const tex = scene.textures.addCanvas(key, composeAvatarSheet(avatar))!;

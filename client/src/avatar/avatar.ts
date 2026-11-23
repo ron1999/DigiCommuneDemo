@@ -1,51 +1,107 @@
-// Avatar options and drawing. The look is described by a few numbers (an index into each
-// list below), so it is tiny to save and send. The art is layered sprite sheets:
-// see sprites.ts and docs/ART_SPEC.md.
+// Avatar options. The look is described by a few small numbers (an index into each list
+// below), so it is tiny to save and send. The art is layered sprite sheets: see sprites.ts
+// and docs/ART_SPEC.md ("Body types", "Starter wardrobe").
 //
-// IMPORTANT: the option counts here must match server/src/avatar.ts.
+// IMPORTANT: keep these lists in sync with LIMITS in server/src/avatar.ts and the items
+// in supabase/009_body_types.sql (one item per option, same order).
 
 export interface Avatar {
-  preset: number; // 0 = build your own (the layers below); 1+ = a ready-made character
+  preset: number; // 0 = build your own (everything below); 1+ = a ready-made character
+  gender: number;
+  build: number;
+  muscle: number;
+  height: number;
   skin: number;
   hairStyle: number;
   hairColor: number;
-  outfitStyle: number;
-  outfitColor: number;
-  accessory: number;
+  top: number;
+  topColor: number;
+  bottom: number;
+  bottomColor: number;
+  onepiece: number;
+  onepieceColor: number;
+  shoes: number;
+  shoesColor: number;
 }
 
 // Ready-made characters (complete sprite sheets in client/public/sprites/presets/<file>.png).
-// Index 0 means "Custom": the character is built from the layer options below.
-// (Fern, preset 2, is being redrawn: add it back here and in server/src/avatar.ts when its sheet exists.)
 export const PRESETS = ['Custom', 'Sprout'];
 export const PRESET_FILES = ['', 'sprout'];
 
-export const SKIN_TONES = [0xf8d9b8, 0xf2c9a0, 0xd9a06f, 0xa86b43, 0x6b4228];
-export const HAIR_STYLES = ['Short', 'Long', 'Spiky', 'Bald'];
+// Body files are sprites/bodies/<gender>-<build>[-muscular].png
+export const GENDERS = ['Male', 'Female'];
+export const GENDER_FILES = ['male', 'female'];
+export const BUILDS = ['Slim', 'Lean', 'Average', 'Stocky', 'Heavyset'];
+export const BUILD_FILES = ['slim', 'lean', 'average', 'stocky', 'heavyset'];
+export const MUSCLES = ['Soft', 'Muscular'];
+// Pixels added to (or removed from) the average height
+export const HEIGHTS = ['Shortest', 'Short', 'Average', 'Tall', 'Tallest'];
+export const HEIGHT_PX = [-12, -6, 0, 6, 12];
+
+// Skin tones are separate pre-colored sheets (a palette swap, not a tint).
+// Same order as client/public/sprites/bodies/skins/skins.json. dir '' = the original sheets.
+export const SKIN_NAMES = ['Porcelain', 'Fair', 'Sunset', 'Golden', 'Olive', 'Tan', 'Brown', 'Umber', 'Deep', 'Ebony'];
+export const SKIN_DIRS = ['skins/porcelain/', 'skins/fair/', '', 'skins/golden/', 'skins/olive/', 'skins/tan/', 'skins/brown/', 'skins/umber/', 'skins/deep/', 'skins/ebony/'];
+export const SKIN_TONES = [0xfce3d6, 0xfbd5b6, 0xf7b37d, 0xf2cb88, 0xecc99b, 0xe7b881, 0xd4a576, 0xc28a6a, 0xa5725b, 0x90665a];
+
+// Hair files are sprites/head/<file>/<body>.png. '' = Bald (no layer).
+export const HAIR_STYLES = ['Messy', 'Bob', 'Buzz', 'Long', 'Curls', 'Ponytail', 'Buns', 'Undercut', 'Locs', 'Spiky', 'Bald'];
+export const HAIR_FILES = ['hair-messy', 'hair-bob', 'hair-buzz', 'hair-long', 'hair-curls', 'hair-ponytail', 'hair-buns', 'hair-undercut', 'hair-locs', 'hair-spiky', ''];
 export const HAIR_COLORS = [0x2b1b12, 0x5a3825, 0xb5651d, 0xe6c35c, 0xc0392b, 0x7d3c98, 0x2e86c1, 0xecf0f1];
-export const OUTFIT_STYLES = ['T-shirt', 'Hoodie', 'Overalls'];
-export const OUTFIT_COLORS = [0x3b6fd4, 0xd9534f, 0x4caf50, 0xf2c94c, 0x8e5ac8, 0xf0883e, 0x20b2aa, 0xff8fb1];
-export const ACCESSORIES = ['None', 'Glasses', 'Cap', 'Headband'];
+
+// Clothing files are sprites/clothing/<file>/<body>.png. '' = nothing in that slot.
+export const TOPS = ['Tank top', 'Tee', 'Hoodie', 'Flannel', 'Sweater'];
+export const TOP_FILES = ['', 'top-tee', 'top-hoodie', 'top-flannel', 'top-sweater'];
+export const BOTTOMS = ['Shorts', 'Jeans', 'Cargo', 'Skirt', 'Trousers'];
+export const BOTTOM_FILES = ['', 'bottom-jeans', 'bottom-cargo', 'bottom-skirt', 'bottom-trousers'];
+export const ONEPIECES = ['None', 'Overalls']; // worn over the top, replaces the bottom
+export const ONEPIECE_FILES = ['', 'onepiece-overalls'];
+export const SHOES = ['Barefoot', 'Sneakers', 'Boots', 'Sandals'];
+export const SHOE_FILES = ['', 'shoes-sneakers', 'shoes-boots', 'shoes-sandals'];
+export const CLOTH_COLORS = [
+  0x3b6fd4, 0xd9534f, 0x4caf50, 0xf2c94c, 0x8e5ac8, 0xf0883e,
+  0x20b2aa, 0xff8fb1, 0x2d3047, 0xf4f1e8, 0x8b5a2b, 0x6b7f3a,
+];
 
 export const DEFAULT_AVATAR: Avatar = {
   preset: 0,
-  skin: 1,
+  gender: 0,
+  build: 2,
+  muscle: 0,
+  height: 2,
+  skin: 2,
   hairStyle: 0,
   hairColor: 1,
-  outfitStyle: 0,
-  outfitColor: 0,
-  accessory: 0,
+  top: 1,
+  topColor: 0,
+  bottom: 1,
+  bottomColor: 8,
+  onepiece: 0,
+  onepieceColor: 11,
+  shoes: 1,
+  shoesColor: 1,
 };
 
 export const AVATAR_LIMITS: Record<keyof Avatar, number> = {
   preset: PRESETS.length,
+  gender: GENDERS.length,
+  build: BUILDS.length,
+  muscle: MUSCLES.length,
+  height: HEIGHTS.length,
   skin: SKIN_TONES.length,
   hairStyle: HAIR_STYLES.length,
   hairColor: HAIR_COLORS.length,
-  outfitStyle: OUTFIT_STYLES.length,
-  outfitColor: OUTFIT_COLORS.length,
-  accessory: ACCESSORIES.length,
+  top: TOPS.length,
+  topColor: CLOTH_COLORS.length,
+  bottom: BOTTOMS.length,
+  bottomColor: CLOTH_COLORS.length,
+  onepiece: ONEPIECES.length,
+  onepieceColor: CLOTH_COLORS.length,
+  shoes: SHOES.length,
+  shoesColor: CLOTH_COLORS.length,
 };
+
+export const AVATAR_KEYS = Object.keys(AVATAR_LIMITS) as (keyof Avatar)[];
 
 // What the wardrobe screen shows, in order
 export interface Category {
@@ -53,28 +109,42 @@ export interface Category {
   label: string;
   colors?: number[]; // shown as color swatches
   names?: string[]; // shown as text buttons
+  group: 'Character' | 'Body' | 'Hair' | 'Clothes';
+  // Only shown when this returns true (e.g. a color for a slot that has something in it)
+  when?: (a: Avatar) => boolean;
 }
 
+const custom = (a: Avatar) => a.preset === 0;
+
 export const CATEGORIES: Category[] = [
-  { key: 'preset', label: 'Character', names: PRESETS },
-  { key: 'skin', label: 'Skin', colors: SKIN_TONES },
-  { key: 'hairStyle', label: 'Hair', names: HAIR_STYLES },
-  { key: 'hairColor', label: 'Hair color', colors: HAIR_COLORS },
-  { key: 'outfitStyle', label: 'Outfit', names: OUTFIT_STYLES },
-  { key: 'outfitColor', label: 'Outfit color', colors: OUTFIT_COLORS },
-  { key: 'accessory', label: 'Accessory', names: ACCESSORIES },
+  { key: 'preset', label: 'Character', names: PRESETS, group: 'Character' },
+  { key: 'gender', label: 'Body', names: GENDERS, group: 'Body', when: custom },
+  { key: 'build', label: 'Build', names: BUILDS, group: 'Body', when: custom },
+  { key: 'muscle', label: 'Muscle', names: MUSCLES, group: 'Body', when: custom },
+  { key: 'height', label: 'Height', names: HEIGHTS, group: 'Body', when: custom },
+  { key: 'skin', label: 'Skin', colors: SKIN_TONES, group: 'Body', when: custom },
+  { key: 'hairStyle', label: 'Hair', names: HAIR_STYLES, group: 'Hair', when: custom },
+  { key: 'hairColor', label: 'Hair color', colors: HAIR_COLORS, group: 'Hair', when: (a) => custom(a) && HAIR_FILES[a.hairStyle] !== '' },
+  { key: 'top', label: 'Top', names: TOPS, group: 'Clothes', when: custom },
+  { key: 'topColor', label: 'Top color', colors: CLOTH_COLORS, group: 'Clothes', when: (a) => custom(a) && a.top > 0 },
+  { key: 'bottom', label: 'Bottom', names: BOTTOMS, group: 'Clothes', when: (a) => custom(a) && a.onepiece === 0 },
+  { key: 'bottomColor', label: 'Bottom color', colors: CLOTH_COLORS, group: 'Clothes', when: (a) => custom(a) && a.onepiece === 0 && a.bottom > 0 },
+  { key: 'onepiece', label: 'Overalls', names: ONEPIECES, group: 'Clothes', when: custom },
+  { key: 'onepieceColor', label: 'Overalls color', colors: CLOTH_COLORS, group: 'Clothes', when: (a) => custom(a) && a.onepiece > 0 },
+  { key: 'shoes', label: 'Shoes', names: SHOES, group: 'Clothes', when: custom },
+  { key: 'shoesColor', label: 'Shoes color', colors: CLOTH_COLORS, group: 'Clothes', when: (a) => custom(a) && a.shoes > 0 },
 ];
 
-// Turns anything (such as an empty database value) into a valid avatar.
+// Turns anything (such as an empty or old-format database value) into a valid avatar.
 export function sanitizeAvatar(raw: unknown): Avatar {
   const src = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
   const out: Avatar = { ...DEFAULT_AVATAR };
-  (Object.keys(AVATAR_LIMITS) as (keyof Avatar)[]).forEach((k) => {
+  for (const k of AVATAR_KEYS) {
     const v = src[k];
     if (typeof v === 'number' && Number.isInteger(v) && v >= 0 && v < AVATAR_LIMITS[k]) {
       out[k] = v;
     }
-  });
+  }
   return out;
 }
 
@@ -84,7 +154,10 @@ export function isEmptyAvatar(raw: unknown): boolean {
 }
 
 export function avatarKey(a: Avatar): string {
-  return (
-    'avatar_' + [a.preset, a.skin, a.hairStyle, a.hairColor, a.outfitStyle, a.outfitColor, a.accessory].join('_')
-  );
+  return 'avatar_' + AVATAR_KEYS.map((k) => a[k]).join('_');
+}
+
+// The body sheet name shared by every layer file, e.g. "female-stocky-muscular"
+export function bodyName(a: Avatar): string {
+  return GENDER_FILES[a.gender] + '-' + BUILD_FILES[a.build] + (a.muscle ? '-muscular' : '');
 }

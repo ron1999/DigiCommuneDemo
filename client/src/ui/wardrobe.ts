@@ -1,5 +1,7 @@
 import { CATEGORIES } from '../avatar/avatar';
-import { drawAvatarPreview } from '../avatar/sprites';
+import { drawAvatarPreview, onSheetUpdated } from '../avatar/sprites';
+import { avatarKey } from '../avatar/avatar';
+import type { Category } from '../avatar/avatar';
 import type { Avatar } from '../avatar/avatar';
 import { isUnlocked, itemFor, onEconomyChange } from '../economy';
 import { cancelDecorate } from './decorate';
@@ -24,7 +26,23 @@ export const wardrobe = {
 let saved: Avatar;
 let current: Avatar;
 const buttons = new Map<keyof Avatar, HTMLButtonElement[]>();
+const rows = new Map<keyof Avatar, HTMLElement>();
+const tabButtons = new Map<Category['group'], HTMLButtonElement>();
+let tab: Category['group'] = 'Body';
 let built = false;
+
+// Show only the open tab's rows, and only rows that make sense for this look
+function refreshRows(): void {
+  const custom = current.preset === 0;
+  tabButtons.forEach((b, g) => {
+    b.classList.toggle('selected', g === tab);
+    b.style.display = custom ? '' : 'none';
+  });
+  for (const cat of CATEGORIES) {
+    const show = cat.group === 'Character' || (cat.group === tab && (!cat.when || cat.when(current)));
+    rows.get(cat.key)!.style.display = show ? '' : 'none';
+  }
+}
 
 function renderPreview(): void {
   drawAvatarPreview(canvas.getContext('2d')!, current);
@@ -54,6 +72,21 @@ function refreshLocks(): void {
 function build(): void {
   if (built) return;
   built = true;
+
+  const tabs = document.createElement('div');
+  tabs.className = 'w-tabs';
+  for (const g of ['Body', 'Hair', 'Clothes'] as const) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'w-btn';
+    b.textContent = g;
+    b.addEventListener('click', () => {
+      tab = g;
+      refreshRows();
+    });
+    tabButtons.set(g, b);
+    tabs.appendChild(b);
+  }
 
   for (const cat of CATEGORIES) {
     const row = document.createElement('div');
@@ -86,6 +119,7 @@ function build(): void {
         errorText.textContent = '';
         current = { ...current, [cat.key]: i };
         refreshSelection();
+        refreshRows();
         renderPreview();
         wardrobe.onPreview?.(current);
       });
@@ -94,9 +128,12 @@ function build(): void {
     }
 
     buttons.set(cat.key, list);
+    rows.set(cat.key, row);
     row.appendChild(label);
     row.appendChild(options);
     body.appendChild(row);
+    // The tabs go right under the Character choice
+    if (cat.group === 'Character') body.appendChild(tabs);
   }
 }
 
@@ -120,6 +157,7 @@ export function openWardrobe(initial: Avatar, firstTime = false): void {
   cancelDecorate();
   panel.style.display = 'flex';
   refreshSelection();
+  refreshRows();
   refreshLocks();
   renderPreview();
 }
@@ -143,3 +181,8 @@ cancelBtn.addEventListener('click', () => {
 });
 
 onEconomyChange(refreshLocks);
+
+// The preview's art may still be loading: redraw when it arrives
+onSheetUpdated((key) => {
+  if (panel.style.display === 'flex' && key === avatarKey(current)) renderPreview();
+});
