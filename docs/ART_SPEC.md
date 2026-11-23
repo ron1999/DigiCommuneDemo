@@ -408,6 +408,52 @@ If the tabby's source frames are ever regenerated, re-check `TABBY_EYES`.
 PixelLab ids: tabby `29b77d33-895c-43c8-89b3-75010d8ebb1b`, corgi `c0d4a263-2fd7-4306-958d-d5602e908395`, beagle
 `39a99824-b919-4a32-bc42-63712e9c916f`, mutt `21e1b3e5-78c1-4e6a-9c81-7b0b5a32c424`.
 
+## UI (2026-11-23)
+
+Wood-and-parchment frames, chunky pixel buttons and a pixel font, in the golden-hour palette of
+the world. Everything is in `client/public/ui/`, drawn at **1 art pixel = 1 CSS pixel**.
+
+**Palette:** outline `#1B110A` (same as the characters); wood `#4A2E1C` `#7A4E2C` `#B07A45`
+`#D9A562`; parchment `#FFF4D6` `#F3E2B8` `#E2C68E`; moss `#3E5E2A` `#5E8A3A` `#8FB84A`; gold
+`#F2B544` `#E08A3A`; rose `#C8574A` `#8E3B2E`; glow teal `#6FC7B8`. These are CSS variables at
+the top of the `<style>` in `client/index.html`.
+
+**Font:** Jersey 15 (`ui/fonts/Jersey15.ttf`, SIL Open Font License, `OFL.txt` next to it).
+One weight, so no bold: use size for emphasis (titles 30-48 px, buttons 18-20 px, small text
+16 px). Pixelify Sans was tried first and dropped: its capital C looks like an O and B like 8.
+
+**Files** (built by `node scripts/build-ui.mjs` from the PixelLab downloads in `scripts/art-src/ui/`):
+
+| File | What | 9-slice (CSS `border-image-slice`) |
+|---|---|---|
+| `panel.png` 176x176 | carved wood frame + parchment, leaves and a mushroom on the corners | 64, drawn 64 px wide, border 38 px (the art overlaps the padding) |
+| `btn-main / btn-wood / btn-danger(.png, -down.png)` 56x29 | green main action, wood normal, rose danger; `-down` = pressed | 11 12 13 |
+| `input.png` 56x34 | parchment text field in a wood frame (bottom edge mirrored from the top: the AI cut it off) | 12 |
+| `tab.png`, `slot.png`, `round.png` | spare tab, item slot, round brass-rim button (used as the joystick knob) | 10 / 14 / - |
+| `bubble.png` 16x16, `bubble-tail.png` 7x5, `nametag.png` 12x12 | hand-placed pixels (no AI): chat bubble, its tail, the dark wood name plate | 6 / - / 4 |
+| `joy-ring.png` 100x100 | joystick ring (hand-placed, radius = `JOY_RADIUS` in `UIScene.ts`) | - |
+| `icons/<name>.png` 32x32 | coin, shop, wardrobe, friends, pets, home, decorate, store, manage, logout, chat, send, gift, close, lock, star + spares search, gear, mushroom, lantern | - |
+| `login-bg.png` | the golden-hour world test scene, behind the login box | - |
+
+**States:** hover = CSS `brightness(1.08)` (only on devices with a mouse; the AI hover art was
+blotchy), pressed = the `-down` image plus 3 px lower text, disabled/locked = greyed with a padlock
+icon. Top bar icons come from CSS `::before`, so code can change a button's text freely; at 900 px
+and narrower the top bar shows icons only.
+
+**In the game (Phaser):** `client/src/ui/theme.ts` loads the small images and the font;
+`NameTag.ts` draws the name plate and the chat bubble with Phaser `NineSlice` (WebGL only: on the
+Canvas renderer they fall back to outlined text and a plain box).
+
+**How the art was made:** `create_ui_asset` (256 px, the palette above, 10 generations each) for
+the panel and a kit of buttons/tab/slot/round button/input; `update_ui_asset(split)` then
+`create_ui_states` (hover + pressed for 3 buttons, 25 generations); one `create_1_direction_object`
+at 32 px with 16 `item_descriptions` for the icons (64 candidates, 10 generations; all 64 are in
+`scripts/art-src/ui/icons/`, picks are listed in `ICONS` in the build script). Total 55 generations.
+Every prompt starts with the owner's style sentence (see "Art direction").
+
+**To add an icon:** pick a frame from `scripts/art-src/ui/icons/` (or generate more the same way),
+add it to `ICONS` in `scripts/build-ui.mjs`, run the script, and use `/ui/icons/<name>.png`.
+
 ## Keep it original
 
 All art must be original: no Pokémon (or other game) characters, outfits, or styles copied

@@ -39,6 +39,7 @@ import { animateCharacter, ensureAvatarTexture, setupCharacterSprite } from '../
 import { FEET_Y, headHeightFor } from '../avatar/sprites';
 import type { Direction } from '../avatar/sprites';
 import type { Avatar } from '../avatar/avatar';
+import { UI_FONT } from '../ui/theme';
 
 export interface JoystickState {
   x: number;
@@ -412,11 +413,11 @@ export class TownScene extends Phaser.Scene {
       const y = built ? (picTop ?? spot.y * TILE_SIZE) - 4 : (spot.y + spot.h / 2) * TILE_SIZE;
       const t = this.add
         .text(x, y, this.signText(info, spot.kind), {
-          fontFamily: 'sans-serif',
-          fontSize: '14px',
+          fontFamily: UI_FONT,
+          fontSize: '18px',
           color,
           align: 'center',
-          stroke: '#000000',
+          stroke: '#1b110a',
           strokeThickness: 4,
         })
         .setOrigin(0.5, built ? 1 : 0.5)

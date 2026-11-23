@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { ensurePetTexture, petAnimKey, petStandFrame, petTextureKey, PET_ORIGIN_Y } from '../pets/petArt';
 import type { PetDir } from '../pets/petArt';
 import type { PetInfo } from '../pets/species';
+import { UI_FONT } from '../ui/theme';
 
 // How far behind its owner the pet walks (in pixels), and how quickly it catches up
 const FOLLOW_DISTANCE = 52;
@@ -28,10 +29,10 @@ export class PetFollower {
     this.sprite = scene.add.sprite(x, y, '__DEFAULT').setOrigin(0.5, PET_ORIGIN_Y).setVisible(false);
     this.label = scene.add
       .text(x, y, pet.name, {
-        fontFamily: 'sans-serif',
-        fontSize: '11px',
+        fontFamily: UI_FONT,
+        fontSize: '16px',
         color: '#ffffff',
-        stroke: '#000000',
+        stroke: '#1b110a',
         strokeThickness: 3,
         resolution: 2,
       })

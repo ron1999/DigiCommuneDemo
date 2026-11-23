@@ -1,15 +1,17 @@
 import Phaser from 'phaser';
 import type { JoystickState } from './TownScene';
+import { UI_COLORS, UI_FONT, uiTexture, whenUiFontReady } from '../ui/theme';
 
 const JOY_RADIUS = 50;
 const DEAD_ZONE = 0.15;
 
 const TEXT_STYLE: Phaser.Types.GameObjects.Text.TextStyle = {
-  fontFamily: 'sans-serif',
-  fontSize: '14px',
-  color: '#ffffff',
-  stroke: '#000000',
-  strokeThickness: 3,
+  fontFamily: UI_FONT,
+  fontSize: '20px',
+  color: UI_COLORS.cream,
+  stroke: UI_COLORS.ink,
+  strokeThickness: 4,
+  resolution: 2,
 };
 
 // Draws the on-screen overlay (title, status, hint, touch joystick).
@@ -17,8 +19,8 @@ const TEXT_STYLE: Phaser.Types.GameObjects.Text.TextStyle = {
 export class UIScene extends Phaser.Scene {
   private joyPointer: Phaser.Input.Pointer | null = null;
   private origin = new Phaser.Math.Vector2();
-  private base!: Phaser.GameObjects.Arc;
-  private thumb!: Phaser.GameObjects.Arc;
+  private base!: Phaser.GameObjects.Image | Phaser.GameObjects.Arc;
+  private thumb!: Phaser.GameObjects.Image | Phaser.GameObjects.Arc;
   private hint!: Phaser.GameObjects.Text;
   private status!: Phaser.GameObjects.Text;
 
@@ -30,7 +32,7 @@ export class UIScene extends Phaser.Scene {
     const joy = this.registry.get('joy') as JoystickState;
     const isTouch = this.sys.game.device.input.touch;
 
-    this.add.text(10, 8, 'DigiCommune  |  prototype', TEXT_STYLE);
+    const title = this.add.text(10, 8, 'DigiCommune  |  prototype', TEXT_STYLE);
 
     // Connection status, top right
     this.status = this.add
@@ -40,21 +42,29 @@ export class UIScene extends Phaser.Scene {
       this.status.setText(value);
     });
 
-    // Hint, top center
+    // Hint, top center, below the HTML top bar (one row of 44 px buttons, two on narrow screens)
+    const hintY = (w: number) => (w < 700 ? 136 : 88);
     this.hint = this.add
       .text(
         this.scale.width / 2,
-        36,
+        hintY(this.scale.width),
         isTouch
           ? 'Drag on the left side to move  |  tap the box below to chat'
           : 'Move: WASD or arrows  |  Press Enter to chat',
         TEXT_STYLE,
       )
-      .setOrigin(0.5, 0);
+      .setOrigin(0.5, 0)
+      .setAlign('center')
+      .setWordWrapWidth(Math.min(this.scale.width - 20, 520));
 
     this.scale.on('resize', (size: Phaser.Structs.Size) => {
       this.status.setPosition(size.width - 10, 8);
-      this.hint.setPosition(size.width / 2, 36);
+      this.hint.setPosition(size.width / 2, hintY(size.width)).setWordWrapWidth(Math.min(size.width - 20, 520));
+    });
+
+    // Text drawn before the pixel font arrived keeps the fallback font: redraw it once it's here
+    whenUiFontReady(() => {
+      for (const t of [title, this.status, this.hint]) if (t.active) t.setFontFamily(UI_FONT);
     });
 
     // Hint fades out after a few seconds
@@ -65,12 +75,16 @@ export class UIScene extends Phaser.Scene {
       duration: 800,
     });
 
-    // Floating joystick: appears wherever the left side of the screen is touched
-    this.base = this.add
-      .circle(0, 0, JOY_RADIUS, 0xffffff, 0.15)
-      .setStrokeStyle(2, 0xffffff, 0.4)
-      .setVisible(false);
-    this.thumb = this.add.circle(0, 0, 22, 0xffffff, 0.45).setVisible(false);
+    // Floating joystick: appears wherever the left side of the screen is touched.
+    // A wooden ring and a brass knob (client/public/ui/), or plain circles if the art isn't loaded.
+    this.base =
+      uiTexture(this, 'ui-joy-ring')
+        ? this.add.image(0, 0, 'ui-joy-ring').setAlpha(0.9).setVisible(false)
+        : this.add.circle(0, 0, JOY_RADIUS, 0xffffff, 0.15).setStrokeStyle(2, 0xffffff, 0.4).setVisible(false);
+    this.thumb =
+      uiTexture(this, 'ui-joy-knob')
+        ? this.add.image(0, 0, 'ui-joy-knob').setVisible(false)
+        : this.add.circle(0, 0, 22, 0xffffff, 0.45).setVisible(false);
 
     this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
       if (!p.wasTouch || this.joyPointer) return;

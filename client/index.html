@@ -7,31 +7,53 @@
       content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
     />
     <title>DigiCommune</title>
+    <link rel="preload" href="/ui/fonts/Jersey15.ttf" as="font" type="font/ttf" crossorigin />
     <style>
+      /* ===== DigiCommune UI theme: golden-hour solarpunk pixel art =====
+         Art lives in /ui/ (built by scripts/build-ui.mjs, see docs/ART_SPEC.md "UI").
+         Frames and buttons are 9-slice PNGs drawn at 1 art pixel = 1 CSS pixel (border-image).
+         No CSS inset/dvh without a fallback: older iPhones lack them. */
+      @font-face {
+        font-family: 'Jersey 15';
+        src: url('/ui/fonts/Jersey15.ttf') format('truetype');
+        font-display: swap;
+      }
+      :root {
+        --ink: #1b110a; --wood-dark: #4a2e1c; --wood: #7a4e2c; --wood-light: #b07a45; --honey: #d9a562;
+        --parch: #f3e2b8; --parch-shade: #e2c68e; --cream: #fff4d6;
+        --moss: #5e8a3a; --leaf: #8fb84a; --gold: #f2b544; --amber: #e08a3a;
+        --rose: #c8574a; --rose-dark: #8e3b2e; --teal: #6fc7b8;
+        --font: 'Jersey 15', 'Trebuchet MS', sans-serif;
+        --outline: 1px 0 #1b110a, -1px 0 #1b110a, 0 1px #1b110a, 0 -1px #1b110a, 0 2px #1b110a;
+      }
+      *, *::before, *::after { box-sizing: border-box; }
       html, body {
         margin: 0;
         padding: 0;
         width: 100%;
         height: 100%;
         overflow: hidden;
-        background: #1d2b1d;
+        background: #2a1a10;
         touch-action: none;
         -webkit-user-select: none;
         user-select: none;
-        font-family: sans-serif;
+        font-family: var(--font);
+        color: var(--wood-dark);
       }
       #game {
         width: 100vw;
         height: 100vh;
         height: 100dvh;
       }
-      input, button {
-        font-size: 16px; /* 16px stops iPhones from zooming in on focus */
+      input, button, select {
+        font-family: var(--font);
+        font-size: 16px; /* 16px+ stops iPhones from zooming in on focus */
       }
       input {
         -webkit-user-select: text;
         user-select: text;
       }
+      button { -webkit-tap-highlight-color: transparent; }
 
       /* Shows a message if the game fails to start (helps debugging on phones) */
       #boot-error {
@@ -45,12 +67,142 @@
         padding: 10px;
         background: #7a1f1f;
         color: #fff;
+        font-family: monospace;
         font-size: 12px;
         white-space: pre-wrap;
         word-break: break-word;
       }
 
-      /* Login / sign up screen */
+      /* ---------- Shared pieces ---------- */
+      /* Wood-and-parchment frame (login box, side panels, link warning) */
+      #auth-form, .side-panel, #link-warn-box {
+        border-style: solid;
+        border-width: 38px;
+        border-image: url('/ui/panel.png') 64 fill / 64px / 0 round;
+        image-rendering: pixelated;
+        background: none;
+        color: var(--wood-dark);
+      }
+      /* Buttons: wood by default, green for the main action / selected, rose for danger */
+      #topbar button, .w-btn, #auth-form .tab, #auth-submit, .shop-buy, #shop-close,
+      #wardrobe-actions button, #decorate-actions button, #pets-actions button, #friends-actions button, #prop-actions button,
+      #link-warn-actions button, #chat-send {
+        min-height: 44px;
+        min-width: 0;
+        max-width: 100%;
+        margin: 0;
+        padding: 0 4px;
+        border-style: solid;
+        border-width: 11px 12px 13px;
+        border-radius: 0;
+        border-image: url('/ui/btn-wood.png') 11 12 13 fill / 11px 12px 13px stretch round;
+        image-rendering: pixelated;
+        background: none;
+        color: var(--cream);
+        font-family: var(--font);
+        font-size: 20px;
+        font-weight: normal;
+        line-height: 20px;
+        text-shadow: var(--outline);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        cursor: pointer;
+        vertical-align: middle;
+      }
+      @media (hover: hover) {
+        #topbar button:hover, .w-btn:hover, #auth-form .tab:hover, #auth-submit:hover, .shop-buy:hover, #shop-close:hover,
+        #wardrobe-actions button:hover, #decorate-actions button:hover, #pets-actions button:hover, #friends-actions button:hover,
+        #prop-actions button:hover, #link-warn-actions button:hover, #chat-send:hover { filter: brightness(1.08) saturate(1.05); }
+      }
+      #topbar button:active, .w-btn:active, #auth-form .tab:active, .shop-buy:active, #shop-close:active,
+      #wardrobe-cancel:active, #decorate-cancel:active, #pets-close:active, #friends-close:active, #prop-close:active,
+      #link-warn-cancel:active {
+        border-image-source: url('/ui/btn-wood-down.png');
+        padding-top: 3px;
+      }
+      .w-btn.selected, #auth-form .tab.active, #auth-submit, .shop-buy, #wardrobe-actions #wardrobe-save, #decorate-actions #decorate-save, #link-warn-actions #link-warn-go,
+      #chat-send, #topbar #claim-btn {
+        border-image-source: url('/ui/btn-main.png');
+      }
+      .w-btn.selected:active, #auth-form .tab.active:active, #auth-submit:active, .shop-buy:active, #wardrobe-actions #wardrobe-save:active,
+      #decorate-actions #decorate-save:active, #link-warn-actions #link-warn-go:active, #chat-send:active, #topbar #claim-btn:active {
+        border-image-source: url('/ui/btn-main-down.png');
+        padding-top: 3px;
+      }
+      #topbar #logout { border-image-source: url('/ui/btn-danger.png'); }
+      #topbar #logout:active { border-image-source: url('/ui/btn-danger-down.png'); }
+      button:disabled, .w-btn.locked {
+        filter: grayscale(0.75) brightness(0.88) !important;
+        opacity: 0.8;
+        cursor: default;
+      }
+      .w-btn.locked::before, .w-swatch.locked::after {
+        content: '';
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        margin: -4px 2px -4px -2px;
+        background: url('/ui/icons/lock.png') center / 16px 16px no-repeat;
+        image-rendering: pixelated;
+        vertical-align: middle;
+      }
+      .w-swatch.locked::after { margin: 0; }
+
+      /* Text fields: parchment in a wood frame */
+      #auth-form input, .prop-input, #friend-name-input, #pet-name-input, #chat-input {
+        min-height: 44px;
+        min-width: 0;
+        max-width: 100%;
+        margin: 0;
+        padding: 0 2px;
+        border-style: solid;
+        border-width: 12px;
+        border-radius: 0;
+        border-image: url('/ui/input.png') 12 fill / 12px stretch round;
+        image-rendering: pixelated;
+        background: none;
+        color: var(--wood-dark);
+        font-family: var(--font);
+        font-size: 20px;
+        outline: none;
+      }
+      #auth-form input::placeholder, .prop-input::placeholder, #friend-name-input::placeholder,
+      #pet-name-input::placeholder, #chat-input::placeholder { color: #a07a50; opacity: 1; }
+      #auth-form input:focus, .prop-input:focus, #friend-name-input:focus, #pet-name-input:focus, #chat-input:focus {
+        filter: brightness(1.06);
+      }
+      select.prop-input {
+        -webkit-appearance: none;
+        appearance: none;
+        padding-right: 18px;
+        background: linear-gradient(45deg, transparent 50%, var(--wood) 50%) right 8px center / 6px 6px no-repeat,
+          linear-gradient(-45deg, transparent 50%, var(--wood) 50%) right 2px center / 6px 6px no-repeat;
+        cursor: pointer;
+      }
+
+      /* Small round-cornered labels and errors */
+      .w-label, .shop-cat {
+        font-size: 18px;
+        color: var(--wood);
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+      }
+      #auth-error, #wardrobe-error, #decorate-error, #pets-error, #friends-error, #prop-error, #shop-error {
+        margin: 0;
+        min-height: 18px;
+        font-size: 18px;
+        line-height: 18px;
+        color: var(--rose-dark);
+      }
+
+      /* Panel scrollbars: wood */
+      .side-panel ::-webkit-scrollbar { width: 10px; }
+      .side-panel ::-webkit-scrollbar-track { background: var(--parch-shade); }
+      .side-panel ::-webkit-scrollbar-thumb { background: var(--wood-light); border: 2px solid var(--ink); }
+
+      /* ---------- Login / sign up screen ---------- */
       #auth {
         position: fixed;
         top: 0;
@@ -60,172 +212,220 @@
         display: none;
         align-items: center;
         justify-content: center;
-        background: #1d2b1d;
+        padding: 12px;
+        background: linear-gradient(rgba(60, 30, 10, 0.25), rgba(40, 20, 8, 0.55)),
+          url('/ui/login-bg.png') center / cover #2a1a10;
+        image-rendering: pixelated;
         z-index: 20;
+        overflow-y: auto;
       }
       #auth-form {
         display: flex;
         flex-direction: column;
-        gap: 12px;
-        width: min(330px, 86vw);
-        padding: 24px;
-        border-radius: 12px;
-        background: #243824;
-        color: #fff;
+        gap: 8px;
+        width: 360px;
+        max-width: 100%;
       }
-      #auth-form h1 { margin: 0; font-size: 24px; }
-      #auth-form input {
-        padding: 10px;
-        border-radius: 8px;
-        border: none;
+      #auth-form h1 {
+        margin: 0;
+        text-align: center;
+        font-size: 48px;
+        font-weight: normal;
+        line-height: 44px;
+        letter-spacing: 2px;
+        color: var(--gold);
+        text-shadow: 1px 0 var(--ink), -1px 0 var(--ink), 0 1px var(--ink), 0 -1px var(--ink),
+          0 2px var(--ink), 0 3px var(--wood), 0 4px var(--ink);
       }
-      #auth-form .tabs { display: flex; gap: 6px; }
-      #auth-form .tab {
-        flex: 1;
-        padding: 8px;
-        border: none;
-        border-radius: 8px;
-        background: #33503a;
-        color: #fff;
-        cursor: pointer;
+      #auth-form h1::after {
+        content: 'a cozy town for you and your friends';
+        display: block;
+        margin-top: 4px;
+        font-size: 18px;
+        line-height: 18px;
+        letter-spacing: 0;
+        color: var(--wood);
+        text-shadow: none;
       }
-      #auth-form .tab.active { background: #5cb85c; font-weight: bold; }
-      #auth-error { margin: 0; min-height: 18px; font-size: 14px; color: #ffb3b3; }
-      #auth-note { margin: 0; font-size: 12px; opacity: 0.7; }
-      #auth-submit {
-        padding: 10px;
-        border-radius: 8px;
-        border: none;
-        background: #5cb85c;
-        color: #fff;
-        font-weight: bold;
-        cursor: pointer;
-      }
-      #auth-submit:disabled { opacity: 0.6; cursor: default; }
+      #auth-form .tabs { display: flex; gap: 4px; }
+      #auth-form .tab { flex: 1 1 0; filter: brightness(0.92); }
+      #auth-form .tab.active { filter: none; }
+      #auth-form input { width: 100%; }
+      #auth-note { margin: 0; font-size: 16px; color: var(--wood); }
 
-      /* Top right buttons (under the status text) */
+      /* ---------- Top bar (under the status text) ---------- */
       #topbar {
         position: fixed;
         top: calc(34px + env(safe-area-inset-top));
         right: 10px;
         display: none;
-        gap: 6px;
+        gap: 4px;
         z-index: 10;
         flex-wrap: wrap;
         justify-content: flex-end;
         align-items: center;
         max-width: calc(100vw - 20px);
       }
-      #coins {
-        padding: 4px 8px;
-        border-radius: 6px;
-        background: rgba(0, 0, 0, 0.45);
-        color: #fff;
-        font-size: 13px;
+      #topbar button { padding: 0 4px 0 2px; }
+      /* Each top bar button gets its icon from CSS, so code can change the button text freely */
+      #topbar button::before, #coins::before {
+        content: '';
+        display: inline-block;
+        width: 32px;
+        height: 32px;
+        margin: -8px 2px -8px -2px;
+        background: center / 32px 32px no-repeat;
+        image-rendering: pixelated;
+        vertical-align: middle;
       }
-      #topbar button {
-        padding: 4px 10px;
-        border-radius: 6px;
-        border: none;
-        background: rgba(0, 0, 0, 0.45);
-        color: #fff;
-        font-size: 13px;
-        cursor: pointer;
+      #topbar #claim-btn::before { background-image: url('/ui/icons/gift.png'); }
+      #topbar #shop-btn::before { background-image: url('/ui/icons/shop.png'); }
+      #topbar #wardrobe-btn::before { background-image: url('/ui/icons/wardrobe.png'); }
+      #topbar #friends-btn::before { background-image: url('/ui/icons/friends.png'); }
+      #topbar #pets-btn::before { background-image: url('/ui/icons/pets.png'); }
+      #topbar #place-btn::before { background-image: url('/ui/icons/home.png'); }
+      #topbar #decorate-btn::before { background-image: url('/ui/icons/decorate.png'); }
+      #topbar #store-btn::before { background-image: url('/ui/icons/store.png'); }
+      #topbar #manage-btn::before { background-image: url('/ui/icons/manage.png'); }
+      #topbar #logout::before { background-image: url('/ui/icons/logout.png'); }
+      #topbar #coins::before { background-image: url('/ui/icons/coin.png'); margin-left: -4px; }
+      #coins {
+        display: inline-block;
+        min-height: 44px;
+        padding: 0 4px;
+        border-style: solid;
+        border-width: 11px 12px 13px;
+        border-image: url('/ui/btn-wood.png') 11 12 13 fill / 11px 12px 13px stretch round;
+        image-rendering: pixelated;
+        color: var(--cream);
+        font-size: 22px;
+        line-height: 20px;
+        text-shadow: var(--outline);
+        white-space: nowrap;
+        filter: saturate(0.9) brightness(0.92);
+      }
+      #decorate-btn, #manage-btn, #store-btn { display: none; }
+      #claim-btn { display: none; }
+      /* Desktop: while a side panel is open, the bar moves left so no button sits under the panel
+         (browsers without :has just keep the bar where it is) */
+      @media (min-width: 701px) {
+        body:has(.side-panel[style*="flex"]) #topbar {
+          right: 400px;
+          max-width: calc(100vw - 420px);
+        }
+      }
+      /* Phones: icons only so the bar fits */
+      @media (max-width: 900px) {
+        #topbar button { font-size: 0; width: 52px; padding: 0; text-overflow: clip; }
+        #topbar button::before { margin: -8px 0; }
       }
 
-      /* Wardrobe: side panel on desktop, bottom sheet on phones */
+      /* ---------- Side panels (desktop) / bottom sheets (phones) ---------- */
       .side-panel {
         position: fixed;
-        top: 0;
-        right: 0;
-        bottom: 0;
-        width: 320px;
+        top: 6px;
+        right: 6px;
+        bottom: 6px;
+        width: 384px;
+        max-width: calc(100vw - 12px);
         display: none;
         flex-direction: column;
-        gap: 10px;
-        padding: 12px;
-        box-sizing: border-box;
-        background: rgba(24, 38, 24, 0.96);
-        color: #fff;
+        gap: 8px;
+        padding: 0;
         z-index: 15;
         touch-action: pan-y;
+        overflow: hidden;
       }
-      #wardrobe-head, #decorate-head, #pets-head, #friends-head, #prop-head { display: flex; align-items: center; gap: 12px; }
-      #wardrobe-title, #decorate-title, #pets-title, #friends-title, #prop-title { font-size: 18px; font-weight: bold; }
+      #wardrobe-head, #decorate-head, #pets-head, #friends-head, #prop-head { display: flex; align-items: center; gap: 12px; min-width: 0; }
+      #wardrobe-title, #decorate-title, #pets-title, #friends-title, #prop-title {
+        font-size: 30px;
+        line-height: 30px;
+        color: var(--wood-dark);
+        min-width: 0;
+        overflow-wrap: anywhere;
+      }
       #wardrobe-preview {
+        flex: none;
         width: 72px;
         height: 96px;
         image-rendering: pixelated;
-        background: #33503a;
-        border-radius: 8px;
+        background: var(--parch-shade);
+        border: 2px solid var(--ink);
+        box-shadow: inset 0 0 0 2px var(--honey);
       }
       #wardrobe-body, #decorate-body, #pets-body, #friends-body, #prop-body {
         flex: 1;
+        min-height: 0;
         overflow-y: auto;
+        overflow-x: hidden;
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        gap: 10px;
+        padding: 2px 2px 2px 0;
+        font-size: 18px;
         -webkit-overflow-scrolling: touch;
       }
-      .w-tabs { display: flex; gap: 6px; position: sticky; top: 0; background: inherit; padding-bottom: 4px; z-index: 1; }
-      .w-tabs .w-btn { flex: 1; padding: 6px 4px; font-size: 13px; }
-      .w-label { font-size: 13px; opacity: 0.8; margin-bottom: 4px; }
-      .w-options { display: flex; flex-wrap: wrap; gap: 6px; }
-      .w-btn {
-        padding: 6px 10px;
-        border-radius: 8px;
-        border: 2px solid transparent;
-        background: #33503a;
-        color: #fff;
-        font-size: 14px;
-        cursor: pointer;
+      .w-tabs {
+        display: flex;
+        gap: 4px;
+        position: sticky;
+        top: 0;
+        background: var(--cream);
+        padding-bottom: 4px;
+        z-index: 1;
       }
-      .w-btn.selected { border-color: #fff; background: #5cb85c; }
+      /* The art's 12 px side edges may overlap the padding, which leaves room for the words */
+      .w-tabs .w-btn { flex: 1 1 0; padding: 0; border-left-width: 6px; border-right-width: 6px; font-size: 18px; }
+      .w-tabs .w-btn:not(.selected) { filter: brightness(0.9); }
+      .w-options { display: flex; flex-wrap: wrap; gap: 4px; min-width: 0; }
       .w-swatch {
-        width: 30px;
-        height: 30px;
+        position: relative;
+        width: 36px;
+        height: 36px;
+        min-width: 36px;
+        margin: 2px 2px 4px;
         padding: 0;
-        border-radius: 50%;
-        border: 2px solid transparent;
+        border: 2px solid var(--ink);
+        border-radius: 0;
+        box-shadow: inset 0 0 0 2px rgba(255, 244, 214, 0.35), 0 2px 0 var(--ink);
         cursor: pointer;
       }
-      .w-swatch.selected { border-color: #fff; box-shadow: 0 0 0 2px #5cb85c; }
-      #wardrobe-error, #decorate-error, #pets-error, #friends-error, #prop-error { margin: 0; min-height: 16px; font-size: 13px; color: #ffb3b3; }
-      #wardrobe-actions, #decorate-actions, #pets-actions, #friends-actions, #prop-actions { display: flex; gap: 8px; }
+      .w-swatch.selected { outline: 3px solid var(--gold); outline-offset: -1px; box-shadow: inset 0 0 0 3px var(--ink), 0 2px 0 var(--ink); }
+      .w-swatch.locked { filter: grayscale(0.5) brightness(0.8); }
+      .w-swatch.locked::after {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        margin: -8px 0 0 -8px;
+      }
+      #wardrobe-actions, #decorate-actions, #pets-actions, #friends-actions, #prop-actions { display: flex; gap: 6px; min-width: 0; }
       #wardrobe-actions button, #decorate-actions button, #pets-actions button, #friends-actions button, #prop-actions button {
-        flex: 1;
-        padding: 10px;
-        border-radius: 8px;
-        border: none;
-        font-weight: bold;
-        cursor: pointer;
+        flex: 1 1 0;
       }
-      #wardrobe-save, #decorate-save { background: #5cb85c; color: #fff; }
-      #wardrobe-save:disabled, #decorate-save:disabled { opacity: 0.6; cursor: default; }
-      #wardrobe-cancel, #decorate-cancel, #pets-close, #friends-close, #prop-close { background: #4a4a4a; color: #fff; }
       @media (max-width: 700px) {
         .side-panel {
           top: auto;
           left: 0;
+          right: 0;
+          bottom: 0;
           width: 100%;
-          height: 56vh;
-          height: 56dvh;
-          border-radius: 16px 16px 0 0;
-          padding-bottom: calc(12px + env(safe-area-inset-bottom));
+          max-width: 100%;
+          height: 62vh;
+          height: 62dvh;
+          border-bottom-width: calc(38px + env(safe-area-inset-bottom));
         }
       }
 
-      .d-opt { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; min-width: 64px; }
+      /* Decorate: furniture choices show a little picture */
+      .d-opt { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; min-width: 64px; height: auto; padding-top: 2px; padding-bottom: 2px; }
       .d-opt canvas { width: 48px; height: 32px; image-rendering: pixelated; }
-      #decorate-btn, #manage-btn, #store-btn { display: none; }
-      #store-btn { background: rgba(160, 110, 20, 0.85) !important; }
 
       /* Place panel (houses and shops) */
-      .prop-note { font-size: 13px; opacity: 0.85; line-height: 1.35; }
-      .prop-inline { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-      .prop-input { flex: 1; min-width: 0; padding: 7px; border-radius: 6px; border: none; font-size: 15px; }
+      .prop-note { font-size: 18px; line-height: 18px; color: var(--wood); }
+      .prop-inline { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; min-width: 0; }
+      .prop-input { flex: 1; min-width: 0; }
       select.prop-input { max-width: 100%; }
-      .prop-num { flex: none; width: 64px; }
+      .prop-num { flex: none; width: 76px; }
 
       /* "You are leaving DigiCommune" warning */
       #link-warn {
@@ -237,106 +437,102 @@
         display: none;
         align-items: center;
         justify-content: center;
-        background: rgba(0, 0, 0, 0.6);
+        padding: 12px;
+        background: rgba(27, 17, 10, 0.6);
         z-index: 40;
       }
       #link-warn-box {
-        width: min(340px, 88vw);
-        padding: 18px;
-        border-radius: 12px;
-        background: #243824;
-        color: #fff;
+        width: 380px;
+        max-width: 100%;
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        gap: 8px;
       }
-      #link-warn-box h2 { margin: 0; font-size: 18px; }
-      #link-warn-box p { margin: 0; font-size: 14px; line-height: 1.4; }
-      #link-warn-url { font-size: 12px; opacity: 0.8; word-break: break-all; }
-      #link-warn-actions { display: flex; gap: 8px; }
-      #link-warn-actions button { flex: 1; padding: 10px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; color: #fff; }
-      #link-warn-cancel { background: #4a4a4a; }
-      #link-warn-go { background: #5cb85c; }
+      #link-warn-box h2 { margin: 0; font-size: 28px; font-weight: normal; line-height: 28px; color: var(--rose-dark); }
+      #link-warn-box p { margin: 0; font-size: 18px; line-height: 19px; }
+      #link-warn-url { font-size: 16px; color: var(--wood); word-break: break-all; }
+      #link-warn-actions { display: flex; gap: 6px; }
+      #link-warn-actions button { flex: 1 1 0; }
+
+      /* Pets and friends */
       .pet-icon { image-rendering: pixelated; flex: none; }
-      .friend-row { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+      .friend-row { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; min-width: 0; }
       .friend-row.dim { opacity: 0.6; }
-      .friend-add { display: flex; gap: 6px; margin-bottom: 6px; }
-      #friend-name-input { flex: 1; min-width: 0; padding: 8px; border-radius: 6px; border: none; font-size: 15px; }
-      .pet-cards { display: flex; gap: 8px; flex-wrap: wrap; }
-      .pet-card {
-        flex: 1 1 140px; display: flex; flex-direction: column; align-items: center; gap: 4px;
-        padding: 10px; border-radius: 10px; border: 2px solid transparent;
-        background: rgba(255, 255, 255, 0.08); color: #fff; cursor: pointer; text-align: center; font-size: 12px;
+      .friend-add { display: flex; gap: 4px; margin-bottom: 6px; min-width: 0; }
+      #friend-name-input { flex: 1; }
+      .pet-cards { display: flex; gap: 6px; flex-wrap: wrap; }
+      .pet-card, .pet-cell {
+        border: 2px solid var(--ink);
+        border-radius: 0;
+        background: var(--parch);
+        box-shadow: inset 0 2px 0 var(--cream), inset 0 -3px 0 var(--parch-shade), 0 2px 0 var(--ink);
+        color: var(--wood-dark);
+        font-family: var(--font);
       }
-      .pet-card strong { font-size: 15px; }
-      .pet-card.selected { border-color: #5cb85c; background: rgba(92, 184, 92, 0.2); }
-      #pet-name-input { width: 100%; box-sizing: border-box; padding: 8px; border-radius: 6px; border: none; font-size: 15px; margin-bottom: 10px; }
-      .pet-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
-      .pet-info { display: flex; flex-direction: column; flex: 1; min-width: 120px; font-size: 12px; }
-      .pet-info strong { font-size: 15px; }
-      .pet-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 8px; }
-      .pet-cell { display: flex; flex-direction: column; align-items: center; font-size: 12px; padding: 6px; border-radius: 8px; background: rgba(255, 255, 255, 0.06); }
-      /* Locked wardrobe options */
-      .w-btn.locked, .w-swatch.locked { opacity: 0.4; }
+      .pet-card {
+        flex: 1 1 130px; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 4px;
+        padding: 8px; margin-bottom: 2px; cursor: pointer; text-align: center; font-size: 16px; line-height: 16px;
+      }
+      .pet-card strong, .pet-info strong { font-size: 22px; font-weight: normal; color: var(--wood-dark); }
+      .pet-card.selected { outline: 3px solid var(--gold); outline-offset: -5px; background: #f6e9b0; }
+      #pet-name-input { width: 100%; margin-bottom: 10px; }
+      .pet-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; min-width: 0; }
+      .pet-info { display: flex; flex-direction: column; flex: 1; min-width: 100px; font-size: 16px; line-height: 17px; color: var(--wood); }
+      .pet-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 6px; padding-bottom: 2px; }
+      .pet-cell { display: flex; flex-direction: column; align-items: center; font-size: 16px; padding: 4px; min-width: 0; overflow: hidden; }
 
       /* Shop */
       #shop-head {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        font-size: 18px;
-        font-weight: bold;
+        gap: 8px;
+        font-size: 30px;
+        line-height: 30px;
       }
-      #shop-balance { font-size: 14px; font-weight: normal; }
-      #shop-list { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-      .shop-cat { font-size: 13px; opacity: 0.8; margin: 12px 0 2px; }
+      #shop-balance { font-size: 20px; color: var(--wood); white-space: nowrap; }
+      #shop-balance::before {
+        content: '';
+        display: inline-block;
+        width: 32px;
+        height: 32px;
+        margin: -8px 0;
+        background: url('/ui/icons/coin.png') center / 32px 32px;
+        image-rendering: pixelated;
+        vertical-align: middle;
+      }
+      #shop-list { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+      .shop-cat { margin: 12px 0 2px; }
       .shop-row {
         display: flex;
         align-items: center;
-        gap: 8px;
-        padding: 6px 0;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        gap: 6px;
+        padding: 4px 0;
+        border-bottom: 2px dashed var(--parch-shade);
+        min-width: 0;
       }
-      .shop-swatch { width: 22px; height: 22px; border-radius: 50%; flex: none; }
-      .shop-name { flex: 1; font-size: 14px; }
-      .shop-price { font-size: 13px; opacity: 0.85; }
-      .shop-buy {
-        padding: 5px 10px;
-        border-radius: 8px;
-        border: none;
-        background: #5cb85c;
-        color: #fff;
-        font-size: 13px;
-        font-weight: bold;
-        cursor: pointer;
-      }
-      .shop-buy:disabled { background: #4a4a4a; opacity: 0.7; cursor: default; }
-      #shop-error { margin: 0; min-height: 16px; font-size: 13px; color: #ffb3b3; }
-      #shop-close {
-        width: 100%;
-        padding: 10px;
-        border-radius: 8px;
-        border: none;
-        background: #4a4a4a;
-        color: #fff;
-        font-weight: bold;
-        cursor: pointer;
-      }
+      .shop-swatch { width: 24px; height: 24px; flex: none; border: 2px solid var(--ink); }
+      .shop-name { flex: 1; min-width: 0; font-size: 18px; line-height: 18px; overflow-wrap: anywhere; }
+      .shop-price { flex: none; font-size: 18px; color: var(--wood); white-space: nowrap; }
+      .shop-buy { flex: none; min-height: 40px; min-width: 64px; font-size: 18px; }
+      #shop-close { width: 100%; }
 
-      /* Daily reward button and pop-up message */
-      #claim-btn { display: none; background: #f2c94c !important; color: #222 !important; font-weight: bold; }
+      /* Daily reward toast */
       #toast {
         display: none;
         position: fixed;
-        top: calc(70px + env(safe-area-inset-top));
+        top: calc(88px + env(safe-area-inset-top)); /* just under the top bar */
         left: 50%;
         transform: translateX(-50%);
         max-width: 90vw;
-        padding: 8px 14px;
-        border-radius: 8px;
-        background: rgba(0, 0, 0, 0.8);
-        color: #fff;
-        font-size: 14px;
+        padding: 2px 6px;
+        border-style: solid;
+        border-width: 6px;
+        border-image: url('/ui/bubble.png') 6 fill / 6px stretch;
+        image-rendering: pixelated;
+        color: var(--wood-dark);
+        font-size: 20px;
+        line-height: 20px;
         text-align: center;
         z-index: 30;
       }
@@ -346,28 +542,28 @@
         position: fixed;
         left: 50%;
         transform: translateX(-50%);
-        bottom: calc(12px + env(safe-area-inset-bottom));
-        width: min(440px, 92vw);
+        bottom: calc(10px + env(safe-area-inset-bottom));
+        width: 460px;
+        max-width: 94vw;
         display: none;
-        gap: 6px;
+        gap: 4px;
         z-index: 10;
       }
-      #chat-input {
-        flex: 1;
-        min-width: 0;
-        padding: 8px 10px;
-        border-radius: 8px;
-        border: none;
-        background: rgba(255, 255, 255, 0.9);
+      #chat-input { flex: 1; }
+      #chat-send { flex: none; padding: 0 6px 0 2px; }
+      #chat-send::before {
+        content: '';
+        display: inline-block;
+        width: 32px;
+        height: 32px;
+        margin: -8px 0;
+        background: url('/ui/icons/send.png') center / 32px 32px;
+        image-rendering: pixelated;
+        vertical-align: middle;
       }
-      #chat-send {
-        padding: 8px 12px;
-        border-radius: 8px;
-        border: none;
-        background: #5cb85c;
-        color: #fff;
-        font-weight: bold;
-        cursor: pointer;
+      @media (max-width: 700px) {
+        #chat-send { font-size: 0; width: 52px; padding: 0; }
+        #toast { top: calc(136px + env(safe-area-inset-top)); } /* the top bar takes two rows here */
       }
     </style>
     <script>
@@ -421,7 +617,7 @@
     </div>
 
     <div id="topbar">
-      <span id="coins">Coins: ...</span>
+      <span id="coins">...</span>
       <button id="claim-btn" type="button">Claim daily reward</button>
       <button id="shop-btn" type="button">Shop</button>
       <button id="wardrobe-btn" type="button">Wardrobe</button>

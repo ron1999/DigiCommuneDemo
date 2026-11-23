@@ -45,6 +45,7 @@ client/src/
   net/network.ts        Colyseus connection with timeout
   ui/chat.ts, wardrobe.ts, shop.ts, hud.ts, decorate.ts, petsPanel.ts, friendsPanel.ts   HTML overlay panels
   ui/placePanel.ts      the Place panel: claim a building/lot, Manage (name, who can come in, guests, bans), Storefront + link warning
+client/public/ui/ + client/src/ui/theme.ts   UI art (frames, buttons, icons, Jersey 15 font), built by scripts/build-ui.mjs, see docs/ART_SPEC.md "UI"
 client/index.html        all HTML + CSS for overlays (login, topbar, wardrobe, shop, chat)
 client/public/sprites/   character layer sheets (128x128 frames, 5 cols x 4 rows): see docs/ART_SPEC.md
 scripts/make-placeholder-sprites.mjs   regenerates PLACEHOLDER sprites (overwrites real art!)

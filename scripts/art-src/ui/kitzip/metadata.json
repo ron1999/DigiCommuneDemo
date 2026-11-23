@@ -1,0 +1,178 @@
+{
+  "ui_assets": [
+    {
+      "id": "7b4e811c-978c-49fa-a538-aa346da14642",
+      "name": "dc-ui-kit",
+      "prompt": "Please no AI slop or generic vibe. I want it look like if stardew valley & scott pilgrims pixel art styles had a baby, not an exact copy of either. A cozy solarpunk game UI kit sheet, warm golden-hour light, every element with a crisp dark brown 1px outline, a lighter top bevel and a darker bottom lip so it looks chunky and pressable. Elements, all blank with NO text and NO icons: a mossy leaf-green main button, a honey-brown carved wood button, a sunset rose-red warning button, a wooden folder tab, a small round wooden icon button with a brass rim, a square cream parchment item slot with a wood border, and a long cream parchment text input field with an inset wood border. Hand-crafted, Studio Ghibli coziness, readable.",
+      "kind": "template",
+      "file": "dc-ui-kit/dc-ui-kit.png",
+      "size": {
+        "width": 256,
+        "height": 256
+      },
+      "group_id": "7b4e811c-978c-49fa-a538-aa346da14642"
+    },
+    {
+      "id": "7b71ce07-bfe7-43ee-939e-17c670c5fb16",
+      "name": "green main button",
+      "prompt": "Please no AI slop or generic vibe. I want it look like if stardew valley & scott pilgrims pixel art styles had a baby, not an exact copy of either. A cozy solarpunk game UI kit sheet, warm golden-hour light, every element with a crisp dark brown 1px outline, a lighter top bevel and a darker bottom lip so it looks chunky and pressable. Elements, all blank with NO text and NO icons: a mossy leaf-green main button, a honey-brown carved wood button, a sunset rose-red warning button, a wooden folder tab, a small round wooden icon button with a brass rim, a square cream parchment item slot with a wood border, and a long cream parchment text input field with an inset wood border. Hand-crafted, Studio Ghibli coziness, readable.",
+      "kind": "element",
+      "file": "dc-ui-kit/elements/green_main_button/green_main_button.png",
+      "size": {
+        "width": 106,
+        "height": 34
+      },
+      "group_id": "7b4e811c-978c-49fa-a538-aa346da14642"
+    },
+    {
+      "id": "89574b1c-c310-4985-a9c8-e794bac1a88f",
+      "name": "hover",
+      "prompt": "Please no AI slop or generic vibe. I want it look like if stardew valley & scott pilgrims pixel art styles had a baby, not an exact copy of either. A cozy solarpunk game UI kit sheet, warm golden-hour light, every element with a crisp dark brown 1px outline, a lighter top bevel and a darker bottom lip so it looks chunky and pressable. Elements, all blank with NO text and NO icons: a mossy leaf-green main button, a honey-brown carved wood button, a sunset rose-red warning button, a wooden folder tab, a small round wooden icon button with a brass rim, a square cream parchment item slot with a wood border, and a long cream parchment text input field with an inset wood border. Hand-crafted, Studio Ghibli coziness, readable.",
+      "kind": "state",
+      "file": "dc-ui-kit/elements/green_main_button/hover.png",
+      "size": {
+        "width": 101,
+        "height": 29
+      },
+      "group_id": "7b4e811c-978c-49fa-a538-aa346da14642",
+      "parent_id": "7b71ce07-bfe7-43ee-939e-17c670c5fb16"
+    },
+    {
+      "id": "138d37ae-eb38-4fc2-88c8-532401ae9a70",
+      "name": "pressed",
+      "prompt": "Please no AI slop or generic vibe. I want it look like if stardew valley & scott pilgrims pixel art styles had a baby, not an exact copy of either. A cozy solarpunk game UI kit sheet, warm golden-hour light, every element with a crisp dark brown 1px outline, a lighter top bevel and a darker bottom lip so it looks chunky and pressable. Elements, all blank with NO text and NO icons: a mossy leaf-green main button, a honey-brown carved wood button, a sunset rose-red warning button, a wooden folder tab, a small round wooden icon button with a brass rim, a square cream parchment item slot with a wood border, and a long cream parchment text input field with an inset wood border. Hand-crafted, Studio Ghibli coziness, readable.",
+      "kind": "state",
+      "file": "dc-ui-kit/elements/green_main_button/pressed.png",
+      "size": {
+        "width": 101,
+        "height": 29
+      },
+      "group_id": "7b4e811c-978c-49fa-a538-aa346da14642",
+      "parent_id": "7b71ce07-bfe7-43ee-939e-17c670c5fb16"
+    },
+    {
+      "id": "4339074a-16dd-4ce0-b935-283f81647319",
+      "name": "wood button",
+      "prompt": "Please no AI slop or generic vibe. I want it look like if stardew valley & scott pilgrims pixel art styles had a baby, not an exact copy of either. A cozy solarpunk game UI kit sheet, warm golden-hour light, every element with a crisp dark brown 1px outline, a lighter top bevel and a darker bottom lip so it looks chunky and pressable. Elements, all blank with NO text and NO icons: a mossy leaf-green main button, a honey-brown carved wood button, a sunset rose-red warning button, a wooden folder tab, a small round wooden icon button with a brass rim, a square cream parchment item slot with a wood border, and a long cream parchment text input field with an inset wood border. Hand-crafted, Studio Ghibli coziness, readable.",
+      "kind": "element",
+      "file": "dc-ui-kit/elements/wood_button/wood_button.png",
+      "size": {
+        "width": 106,
+        "height": 34
+      },
+      "group_id": "7b4e811c-978c-49fa-a538-aa346da14642"
+    },
+    {
+      "id": "822beefe-eec0-4f3b-8a1d-18e8bf664bf6",
+      "name": "hover",
+      "prompt": "Please no AI slop or generic vibe. I want it look like if stardew valley & scott pilgrims pixel art styles had a baby, not an exact copy of either. A cozy solarpunk game UI kit sheet, warm golden-hour light, every element with a crisp dark brown 1px outline, a lighter top bevel and a darker bottom lip so it looks chunky and pressable. Elements, all blank with NO text and NO icons: a mossy leaf-green main button, a honey-brown carved wood button, a sunset rose-red warning button, a wooden folder tab, a small round wooden icon button with a brass rim, a square cream parchment item slot with a wood border, and a long cream parchment text input field with an inset wood border. Hand-crafted, Studio Ghibli coziness, readable.",
+      "kind": "state",
+      "file": "dc-ui-kit/elements/wood_button/hover.png",
+      "size": {
+        "width": 101,
+        "height": 29
+      },
+      "group_id": "7b4e811c-978c-49fa-a538-aa346da14642",
+      "parent_id": "4339074a-16dd-4ce0-b935-283f81647319"
+    },
+    {
+      "id": "63a00a05-e96f-489c-98ea-87d315eea8a7",
+      "name": "pressed",
+      "prompt": "Please no AI slop or generic vibe. I want it look like if stardew valley & scott pilgrims pixel art styles had a baby, not an exact copy of either. A cozy solarpunk game UI kit sheet, warm golden-hour light, every element with a crisp dark brown 1px outline, a lighter top bevel and a darker bottom lip so it looks chunky and pressable. Elements, all blank with NO text and NO icons: a mossy leaf-green main button, a honey-brown carved wood button, a sunset rose-red warning button, a wooden folder tab, a small round wooden icon button with a brass rim, a square cream parchment item slot with a wood border, and a long cream parchment text input field with an inset wood border. Hand-crafted, Studio Ghibli coziness, readable.",
+      "kind": "state",
+      "file": "dc-ui-kit/elements/wood_button/pressed.png",
+      "size": {
+        "width": 101,
+        "height": 29
+      },
+      "group_id": "7b4e811c-978c-49fa-a538-aa346da14642",
+      "parent_id": "4339074a-16dd-4ce0-b935-283f81647319"
+    },
+    {
+      "id": "edb1244f-d3ac-44d5-8be8-b56747ee8a95",
+      "name": "rose red button",
+      "prompt": "Please no AI slop or generic vibe. I want it look like if stardew valley & scott pilgrims pixel art styles had a baby, not an exact copy of either. A cozy solarpunk game UI kit sheet, warm golden-hour light, every element with a crisp dark brown 1px outline, a lighter top bevel and a darker bottom lip so it looks chunky and pressable. Elements, all blank with NO text and NO icons: a mossy leaf-green main button, a honey-brown carved wood button, a sunset rose-red warning button, a wooden folder tab, a small round wooden icon button with a brass rim, a square cream parchment item slot with a wood border, and a long cream parchment text input field with an inset wood border. Hand-crafted, Studio Ghibli coziness, readable.",
+      "kind": "element",
+      "file": "dc-ui-kit/elements/rose_red_button/rose_red_button.png",
+      "size": {
+        "width": 106,
+        "height": 34
+      },
+      "group_id": "7b4e811c-978c-49fa-a538-aa346da14642"
+    },
+    {
+      "id": "9c3edef8-5c4d-4d3a-b8d1-3be39ff73096",
+      "name": "hover",
+      "prompt": "Please no AI slop or generic vibe. I want it look like if stardew valley & scott pilgrims pixel art styles had a baby, not an exact copy of either. A cozy solarpunk game UI kit sheet, warm golden-hour light, every element with a crisp dark brown 1px outline, a lighter top bevel and a darker bottom lip so it looks chunky and pressable. Elements, all blank with NO text and NO icons: a mossy leaf-green main button, a honey-brown carved wood button, a sunset rose-red warning button, a wooden folder tab, a small round wooden icon button with a brass rim, a square cream parchment item slot with a wood border, and a long cream parchment text input field with an inset wood border. Hand-crafted, Studio Ghibli coziness, readable.",
+      "kind": "state",
+      "file": "dc-ui-kit/elements/rose_red_button/hover.png",
+      "size": {
+        "width": 101,
+        "height": 29
+      },
+      "group_id": "7b4e811c-978c-49fa-a538-aa346da14642",
+      "parent_id": "edb1244f-d3ac-44d5-8be8-b56747ee8a95"
+    },
+    {
+      "id": "1eac17ca-f690-4d5b-bf83-5ba6654e5e01",
+      "name": "pressed",
+      "prompt": "Please no AI slop or generic vibe. I want it look like if stardew valley & scott pilgrims pixel art styles had a baby, not an exact copy of either. A cozy solarpunk game UI kit sheet, warm golden-hour light, every element with a crisp dark brown 1px outline, a lighter top bevel and a darker bottom lip so it looks chunky and pressable. Elements, all blank with NO text and NO icons: a mossy leaf-green main button, a honey-brown carved wood button, a sunset rose-red warning button, a wooden folder tab, a small round wooden icon button with a brass rim, a square cream parchment item slot with a wood border, and a long cream parchment text input field with an inset wood border. Hand-crafted, Studio Ghibli coziness, readable.",
+      "kind": "state",
+      "file": "dc-ui-kit/elements/rose_red_button/pressed.png",
+      "size": {
+        "width": 98,
+        "height": 29
+      },
+      "group_id": "7b4e811c-978c-49fa-a538-aa346da14642",
+      "parent_id": "edb1244f-d3ac-44d5-8be8-b56747ee8a95"
+    },
+    {
+      "id": "b445b416-a06f-45ed-9235-10c1a9bc574e",
+      "name": "tab",
+      "prompt": "Please no AI slop or generic vibe. I want it look like if stardew valley & scott pilgrims pixel art styles had a baby, not an exact copy of either. A cozy solarpunk game UI kit sheet, warm golden-hour light, every element with a crisp dark brown 1px outline, a lighter top bevel and a darker bottom lip so it looks chunky and pressable. Elements, all blank with NO text and NO icons: a mossy leaf-green main button, a honey-brown carved wood button, a sunset rose-red warning button, a wooden folder tab, a small round wooden icon button with a brass rim, a square cream parchment item slot with a wood border, and a long cream parchment text input field with an inset wood border. Hand-crafted, Studio Ghibli coziness, readable.",
+      "kind": "element",
+      "file": "dc-ui-kit/elements/tab.png",
+      "size": {
+        "width": 76,
+        "height": 32
+      },
+      "group_id": "7b4e811c-978c-49fa-a538-aa346da14642"
+    },
+    {
+      "id": "702441e2-dbc7-44f1-8127-33c2b7cd3077",
+      "name": "round icon button",
+      "prompt": "Please no AI slop or generic vibe. I want it look like if stardew valley & scott pilgrims pixel art styles had a baby, not an exact copy of either. A cozy solarpunk game UI kit sheet, warm golden-hour light, every element with a crisp dark brown 1px outline, a lighter top bevel and a darker bottom lip so it looks chunky and pressable. Elements, all blank with NO text and NO icons: a mossy leaf-green main button, a honey-brown carved wood button, a sunset rose-red warning button, a wooden folder tab, a small round wooden icon button with a brass rim, a square cream parchment item slot with a wood border, and a long cream parchment text input field with an inset wood border. Hand-crafted, Studio Ghibli coziness, readable.",
+      "kind": "element",
+      "file": "dc-ui-kit/elements/round_icon_button.png",
+      "size": {
+        "width": 50,
+        "height": 50
+      },
+      "group_id": "7b4e811c-978c-49fa-a538-aa346da14642"
+    },
+    {
+      "id": "53243ba8-6c2b-449e-83ef-d84f9cbcb49a",
+      "name": "item slot",
+      "prompt": "Please no AI slop or generic vibe. I want it look like if stardew valley & scott pilgrims pixel art styles had a baby, not an exact copy of either. A cozy solarpunk game UI kit sheet, warm golden-hour light, every element with a crisp dark brown 1px outline, a lighter top bevel and a darker bottom lip so it looks chunky and pressable. Elements, all blank with NO text and NO icons: a mossy leaf-green main button, a honey-brown carved wood button, a sunset rose-red warning button, a wooden folder tab, a small round wooden icon button with a brass rim, a square cream parchment item slot with a wood border, and a long cream parchment text input field with an inset wood border. Hand-crafted, Studio Ghibli coziness, readable.",
+      "kind": "element",
+      "file": "dc-ui-kit/elements/item_slot.png",
+      "size": {
+        "width": 58,
+        "height": 58
+      },
+      "group_id": "7b4e811c-978c-49fa-a538-aa346da14642"
+    },
+    {
+      "id": "a26f208d-c221-444c-9a7d-6f3a6663b26f",
+      "name": "text input field",
+      "prompt": "Please no AI slop or generic vibe. I want it look like if stardew valley & scott pilgrims pixel art styles had a baby, not an exact copy of either. A cozy solarpunk game UI kit sheet, warm golden-hour light, every element with a crisp dark brown 1px outline, a lighter top bevel and a darker bottom lip so it looks chunky and pressable. Elements, all blank with NO text and NO icons: a mossy leaf-green main button, a honey-brown carved wood button, a sunset rose-red warning button, a wooden folder tab, a small round wooden icon button with a brass rim, a square cream parchment item slot with a wood border, and a long cream parchment text input field with an inset wood border. Hand-crafted, Studio Ghibli coziness, readable.",
+      "kind": "element",
+      "file": "dc-ui-kit/elements/text_input_field.png",
+      "size": {
+        "width": 226,
+        "height": 36
+      },
+      "group_id": "7b4e811c-978c-49fa-a538-aa346da14642"
+    }
+  ]
+}

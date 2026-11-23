@@ -19,7 +19,9 @@ export function toast(message: string): void {
 
 function render(): void {
   const s = economy.state;
-  coinsEl.textContent = 'Coins: ' + (s ? s.balance : '...');
+  // The coin icon comes from CSS (#coins::before), so only the number goes here
+  coinsEl.textContent = s ? s.balance.toLocaleString('en-US') : '...';
+  coinsEl.title = 'Coins';
   claimBtn.style.display = canClaimToday() ? 'inline-block' : 'none';
 }
 
