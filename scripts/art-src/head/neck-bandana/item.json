@@ -1,0 +1,11 @@
+{
+  "name": "Neck bandana",
+  "kind": "neck",
+  "key": "blue",
+  "tint": true,
+  "made_with": "edit_image_pro_flash on the reference body's 3 standing views (6 generations per gender)",
+  "pixellab_jobs": {
+    "female": "fe9d63f8-da25-41b3-b114-e438e28da35d",
+    "male": "7c92019c-55f4-4106-ba38-a5acfb00724f"
+  }
+}

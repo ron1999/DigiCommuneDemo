@@ -210,6 +210,29 @@ frame of the heavyset overalls; 2-3 skin pixels on one female-average jeans fram
 Fixing a bad AI frame: move the old `<dir>_1..4.png` aside, regenerate that one direction with a
 new seed, re-run the build. Frames from two runs of the same direction can be mixed.
 
+**Accessories (done)** are head items, built like hair (`build-head-items.mjs`), listed for the
+game in `client/public/sprites/head/items.json` (id, name, kind, tint, plus `mask` for hats and
+`underHat` for hair):
+
+| Kind | Items | Notes |
+|---|---|---|
+| `hat` | `hat-beanie`, `hat-cap`, `hat-sunhat`, `hat-bucket`, `hat-mushroom` | each has `head/<hat>/mask/<body>.png` |
+| `glasses` | `glasses-round`, `glasses-square`, `glasses-sun` | |
+| `band` | `band-bandana` (headband) | drawn over the hair, no mask |
+| `neck` | `neck-bandana` | under the hair (long hair falls over it) |
+| `face` | `face-ear-hoops`, `face-nose-ring`, `face-lip-ring`, `face-brow-bar`, `face-tattoo-leaf` | several can be worn at once |
+
+Head stack order: neck, face, hair, band, hat, glasses. **Hats and hair:** before drawing a hat,
+erase the hair pixels where the hat's mask sheet is opaque (everything above the hat's brim), so
+big hair doesn't poke through. Hair with `"underHat": "tuck"` (the big curls) isn't drawn at all
+under a hat.
+
+Face items (piercings, face tattoos) are 1-4 pixels, so they are hand-placed as exact pixels on
+the reference heads in `scripts/make-face-items.mjs` (no PixelLab cost), then built with
+`build-head-items.mjs` (`"shades"` gives exact greys, `"outline": false` keeps them from being
+swallowed by the outline). Arm or body tattoos would need the clothing pipeline (they must follow
+the arms), about 90-180 generations per design.
+
 Every prompt starts with the owner's words, exactly: "Please no AI slop or generic vibe. I want
 it look like if stardew valley & scott pilgrims pixel art styles had a baby, not an exact copy
 of either."

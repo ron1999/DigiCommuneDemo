@@ -1,0 +1,11 @@
+{
+  "name": "Bandana headband",
+  "kind": "band",
+  "key": "blue",
+  "tint": true,
+  "made_with": "edit_image_pro_flash on the reference body's 3 standing views (6 generations per gender)",
+  "pixellab_jobs": {
+    "female": "b3b86dc0-aab9-4f76-b062-a8fbeb426fa5",
+    "male": "80d5edc4-8148-4df9-a4df-0263d1dadafe"
+  }
+}

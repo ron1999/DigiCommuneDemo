@@ -1,0 +1,11 @@
+{
+  "name": "Straw sun hat",
+  "kind": "hat",
+  "key": "blue",
+  "tint": true,
+  "made_with": "edit_image_pro_flash on the reference body's 3 standing views (6 generations per gender)",
+  "pixellab_jobs": {
+    "female": "1b072025-e403-4e78-855e-08514baee770",
+    "male": "e50af681-f369-4853-a9ea-fa40bb1d5a21"
+  }
+}

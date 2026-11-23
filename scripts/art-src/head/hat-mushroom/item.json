@@ -1,0 +1,11 @@
+{
+  "name": "Mushroom hat",
+  "kind": "hat",
+  "key": "blue",
+  "tint": true,
+  "made_with": "edit_image_pro_flash on the reference body's 3 standing views (6 generations per gender)",
+  "pixellab_jobs": {
+    "female": "2c23a317-1b2b-4da1-a1e6-f992fbb6c121",
+    "male": "3af8220a-b434-46d8-b61c-e5a9f6ea5cad"
+  }
+}

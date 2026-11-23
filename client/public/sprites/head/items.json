@@ -1,0 +1,161 @@
+{
+  "_about": "Head items: sheets at sprites/head/<id>/<body>.png, grey pixels tint to the chosen colour. Stack after clothing, before the height stretch, by kind: neck (bandana), face (piercings, face tattoos), hair, band (headband), hat, glasses. Hats: erase hair pixels where sprites/head/<mask><body>.png is opaque, then draw the hat; hair with underHat \"tuck\" is not drawn at all under a hat. One hat, one glasses, one band, one neck; face items stack.",
+  "items": [
+    {
+      "id": "band-bandana",
+      "name": "Bandana headband",
+      "kind": "band",
+      "tint": true
+    },
+    {
+      "id": "face-brow-bar",
+      "name": "Eyebrow bar",
+      "kind": "face",
+      "tint": true
+    },
+    {
+      "id": "face-ear-hoops",
+      "name": "Ear hoops",
+      "kind": "face",
+      "tint": true
+    },
+    {
+      "id": "face-lip-ring",
+      "name": "Lip ring",
+      "kind": "face",
+      "tint": true
+    },
+    {
+      "id": "face-nose-ring",
+      "name": "Nose ring",
+      "kind": "face",
+      "tint": true
+    },
+    {
+      "id": "face-tattoo-leaf",
+      "name": "Leaf tattoo",
+      "kind": "face",
+      "tint": true
+    },
+    {
+      "id": "glasses-round",
+      "name": "Round glasses",
+      "kind": "glasses",
+      "tint": true
+    },
+    {
+      "id": "glasses-square",
+      "name": "Square glasses",
+      "kind": "glasses",
+      "tint": true
+    },
+    {
+      "id": "glasses-sun",
+      "name": "Retro sunglasses",
+      "kind": "glasses",
+      "tint": true
+    },
+    {
+      "id": "hair-bob",
+      "name": "Wavy bob",
+      "kind": "hair",
+      "tint": true
+    },
+    {
+      "id": "hair-buns",
+      "name": "Space buns",
+      "kind": "hair",
+      "tint": true
+    },
+    {
+      "id": "hair-buzz",
+      "name": "Buzz cut",
+      "kind": "hair",
+      "tint": true
+    },
+    {
+      "id": "hair-curls",
+      "name": "Big curls",
+      "kind": "hair",
+      "tint": true,
+      "underHat": "tuck"
+    },
+    {
+      "id": "hair-locs",
+      "name": "Shoulder locs",
+      "kind": "hair",
+      "tint": true
+    },
+    {
+      "id": "hair-long",
+      "name": "Long straight",
+      "kind": "hair",
+      "tint": true
+    },
+    {
+      "id": "hair-messy",
+      "name": "Messy short hair",
+      "kind": "hair",
+      "tint": true
+    },
+    {
+      "id": "hair-ponytail",
+      "name": "High ponytail",
+      "kind": "hair",
+      "tint": true
+    },
+    {
+      "id": "hair-spiky",
+      "name": "Punk spikes",
+      "kind": "hair",
+      "tint": true
+    },
+    {
+      "id": "hair-undercut",
+      "name": "Undercut",
+      "kind": "hair",
+      "tint": true
+    },
+    {
+      "id": "hat-beanie",
+      "name": "Knit beanie",
+      "kind": "hat",
+      "tint": true,
+      "mask": "hat-beanie/mask/"
+    },
+    {
+      "id": "hat-bucket",
+      "name": "Bucket hat",
+      "kind": "hat",
+      "tint": true,
+      "mask": "hat-bucket/mask/"
+    },
+    {
+      "id": "hat-cap",
+      "name": "Baseball cap",
+      "kind": "hat",
+      "tint": true,
+      "mask": "hat-cap/mask/"
+    },
+    {
+      "id": "hat-mushroom",
+      "name": "Mushroom hat",
+      "kind": "hat",
+      "tint": true,
+      "mask": "hat-mushroom/mask/"
+    },
+    {
+      "id": "hat-sunhat",
+      "name": "Straw sun hat",
+      "kind": "hat",
+      "tint": true,
+      "mask": "hat-sunhat/mask/"
+    },
+    {
+      "id": "neck-bandana",
+      "name": "Neck bandana",
+      "kind": "neck",
+      "tint": true
+    }
+  ]
+}

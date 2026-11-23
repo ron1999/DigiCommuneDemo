@@ -1,0 +1,11 @@
+{
+  "name": "Retro sunglasses",
+  "kind": "glasses",
+  "key": "blue",
+  "tint": true,
+  "made_with": "edit_image_pro_flash on the reference body's 3 standing views (6 generations per gender)",
+  "pixellab_jobs": {
+    "female": "f608b977-4435-4b86-96dc-a06df6ef743a",
+    "male": "471f7ed1-dbc9-4c7d-aade-da7083426029"
+  }
+}

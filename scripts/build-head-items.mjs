@@ -14,7 +14,7 @@
 //   - tintable items come out grey (mid grey = the chosen colour, see client/src/avatar/sprites.ts)
 //   - every item gets the shared outline (scripts/outline.mjs)
 
-import { existsSync, mkdirSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readPng, newImage, writePng } from './png.mjs';
@@ -69,7 +69,11 @@ function cutPanel(art, ref, p, mainLum) {
       const o = (y * FRAME + x + PANEL_X) * 4;
       const c = A(x, y);
       if (key[y * PANEL_W + x]) {
-        if (cfg.tint) {
+        const exact = cfg.shades && cfg.shades[`${c[0]},${c[1]},${c[2]}`];
+        if (exact) {
+          // hand-placed items: exact greys per shade
+          out.data.set([exact, exact, exact, 255], o);
+        } else if (cfg.tint) {
           // grey that the game's tint turns into this brightness of the chosen colour
           const f = lum(c[0], c[1], c[2]) / mainLum;
           const g = Math.max(44, Math.min(235, Math.round(((f - 0.35) / 1.3) * 255)));
@@ -91,6 +95,8 @@ function cutPanel(art, ref, p, mainLum) {
       }
     }
   // close the outline: item pixels on the item's outside edge that touch transparency or skin
+  // (not for tiny hand-placed items, "outline": false, where it would swallow the item)
+  if (cfg.outline === false) return out;
   const src = new Uint8Array(out.data);
   for (let y = 0; y < FRAME; y++)
     for (let x = 0; x < FRAME; x++) {
@@ -120,6 +126,29 @@ function blit(sheet, layer, col, row, dx, dy, mirror) {
       if (mirror) tx = FRAME - 1 - tx;
       sheet.data.set(layer.data.subarray(i, i + 4), ((row * FRAME + ty) * FRAME * COLS + col * FRAME + tx) * 4);
     }
+}
+
+// Hats: hair would poke out through the hat, so every hat also gets a MASK sheet
+// (head/<hat>/mask/<body>.png): in each frame, every pixel above the hat's brim (the hat's lowest
+// pixel in that column; beside the hat, the brim at the hat's nearest edge) is opaque. The game
+// erases hair pixels under the mask before drawing the hat. Hair with "underHat": "tuck" in
+// head/items.json is hidden completely under any hat.
+function hatMask(hat) {
+  const m = newImage(hat.width, hat.height);
+  for (let row = 0; row < 4; row++)
+    for (let col = 0; col < COLS; col++) {
+      const brim = new Int32Array(FRAME).fill(-1);
+      for (let x = 0; x < FRAME; x++)
+        for (let y = 0; y < FRAME; y++) if (hat.data[((row * FRAME + y) * hat.width + col * FRAME + x) * 4 + 3]) brim[x] = y;
+      const cols = [...brim.keys()].filter((x) => brim[x] >= 0);
+      if (!cols.length) continue;
+      const x0 = cols[0], x1 = cols[cols.length - 1];
+      for (let x = 0; x < FRAME; x++) {
+        const b = x < x0 ? brim[x0] : x > x1 ? brim[x1] : brim[x] >= 0 ? brim[x] : Math.max(brim[x0], brim[x1]);
+        for (let y = 0; y <= b; y++) m.data.set([255, 0, 255, 255], ((row * FRAME + y) * hat.width + col * FRAME + x) * 4);
+      }
+    }
+  return m;
 }
 
 mkdirSync(OUT, { recursive: true });
@@ -161,10 +190,33 @@ for (const gender of ['male', 'female']) {
         }
       }
     writePng(join(OUT, f), sheet);
+    if (cfg.kind === 'hat') {
+      mkdirSync(join(OUT, 'mask'), { recursive: true });
+      writePng(join(OUT, 'mask', f), hatMask(sheet));
+    }
     written.push(f);
   }
 }
-console.log(`head/${item}: ${written.length} sheets`);
+console.log(`head/${item}: ${written.length} sheets${cfg.kind === 'hat' ? ' + masks' : ''}`);
+
+// head/items.json: every built head item, for the game's wardrobe
+{
+  const HEAD = join(ROOT, 'client', 'public', 'sprites', 'head');
+  const SRC_ALL = join(ROOT, 'scripts', 'art-src', 'head');
+  const items = readdirSync(SRC_ALL)
+    .filter((id) => existsSync(join(SRC_ALL, id, 'item.json')) && existsSync(join(HEAD, id)))
+    .map((id) => {
+      const c = JSON.parse(readFileSync(join(SRC_ALL, id, 'item.json'), 'utf8'));
+      const e = { id, name: c.name, kind: c.kind, tint: !!c.tint };
+      if (c.underHat) e.underHat = c.underHat;
+      if (c.kind === 'hat') e.mask = `${id}/mask/`;
+      return e;
+    });
+  writeFileSync(
+    join(HEAD, 'items.json'),
+    JSON.stringify({ _about: 'Head items: sheets at sprites/head/<id>/<body>.png, grey pixels tint to the chosen colour. Stack after clothing, before the height stretch, by kind: neck (bandana), face (piercings, face tattoos), hair, band (headband), hat, glasses. Hats: erase hair pixels where sprites/head/<mask><body>.png is opaque, then draw the hat; hair with underHat "tuck" is not drawn at all under a hat. One hat, one glasses, one band, one neck; face items stack.', items }, null, 2),
+  );
+}
 
 // Optional preview: every body with the item, front/side/back standing + one walk frame,
 // tinted with a few hair colours

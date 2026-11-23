@@ -1,0 +1,13 @@
+{
+  "name": "Nose ring",
+  "kind": "face",
+  "key": "blue",
+  "tint": true,
+  "outline": false,
+  "shades": {
+    "150,190,255": 200,
+    "40,90,235": 128,
+    "20,40,150": 78
+  },
+  "made_with": "hand-placed pixels, scripts/make-face-items.mjs (no PixelLab cost)"
+}

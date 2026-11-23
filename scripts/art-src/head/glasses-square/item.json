@@ -1,0 +1,11 @@
+{
+  "name": "Square glasses",
+  "kind": "glasses",
+  "key": "blue",
+  "tint": true,
+  "made_with": "edit_image_pro_flash on the reference body's 3 standing views (6 generations per gender)",
+  "pixellab_jobs": {
+    "female": "00dd1119-f37f-4cfd-89ca-5a60bc946bce",
+    "male": "b9fedb57-ced7-4430-be00-40e39e970e1d"
+  }
+}

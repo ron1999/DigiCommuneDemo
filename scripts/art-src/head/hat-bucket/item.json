@@ -1,0 +1,11 @@
+{
+  "name": "Bucket hat",
+  "kind": "hat",
+  "key": "blue",
+  "tint": true,
+  "made_with": "edit_image_pro_flash on the reference body's 3 standing views (6 generations per gender)",
+  "pixellab_jobs": {
+    "female": "494c8913-27ae-4348-8a51-2c052a0563ba",
+    "male": "b2446286-3f92-4f0a-8a77-071d8146117d"
+  }
+}
