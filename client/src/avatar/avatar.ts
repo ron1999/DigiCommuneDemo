@@ -22,6 +22,16 @@ export interface Avatar {
   onepieceColor: number;
   shoes: number;
   shoesColor: number;
+  hat: number;
+  hatColor: number;
+  glasses: number;
+  glassesColor: number;
+  band: number;
+  bandColor: number;
+  neck: number;
+  neckColor: number;
+  face: number; // several at once: bit i set = FACE_ITEMS[i] is worn
+  faceColor: number;
 }
 
 // Ready-made characters (complete sprite sheets in client/public/sprites/presets/<file>.png).
@@ -58,6 +68,21 @@ export const ONEPIECES = ['None', 'Overalls']; // worn over the top, replaces th
 export const ONEPIECE_FILES = ['', 'onepiece-overalls'];
 export const SHOES = ['Barefoot', 'Sneakers', 'Boots', 'Sandals'];
 export const SHOE_FILES = ['', 'shoes-sneakers', 'shoes-boots', 'shoes-sandals'];
+// Accessories (sprites/head/<file>/<body>.png, see sprites/head/items.json). '' = none.
+// Hats hide the hair under them using sprites/head/<file>/mask/<body>.png.
+export const HATS = ['None', 'Beanie', 'Cap', 'Sun hat', 'Bucket hat', 'Mushroom hat'];
+export const HAT_FILES = ['', 'hat-beanie', 'hat-cap', 'hat-sunhat', 'hat-bucket', 'hat-mushroom'];
+export const GLASSES = ['None', 'Round', 'Square', 'Sunglasses'];
+export const GLASSES_FILES = ['', 'glasses-round', 'glasses-square', 'glasses-sun'];
+export const BANDS = ['None', 'Bandana'];
+export const BAND_FILES = ['', 'band-bandana'];
+export const NECKS = ['None', 'Neck bandana'];
+export const NECK_FILES = ['', 'neck-bandana'];
+export const FACE_ITEMS = ['Ear hoops', 'Nose ring', 'Lip ring', 'Brow bar', 'Leaf tattoo'];
+export const FACE_FILES = ['face-ear-hoops', 'face-nose-ring', 'face-lip-ring', 'face-brow-bar', 'face-tattoo-leaf'];
+// Hair that is not drawn at all under a hat (items.json "underHat": "tuck")
+export const HAIR_TUCKED_UNDER_HAT = ['hair-curls'];
+
 export const CLOTH_COLORS = [
   0x3b6fd4, 0xd9534f, 0x4caf50, 0xf2c94c, 0x8e5ac8, 0xf0883e,
   0x20b2aa, 0xff8fb1, 0x2d3047, 0xf4f1e8, 0x8b5a2b, 0x6b7f3a,
@@ -80,6 +105,16 @@ export const DEFAULT_AVATAR: Avatar = {
   onepieceColor: 11,
   shoes: 1,
   shoesColor: 1,
+  hat: 0,
+  hatColor: 1,
+  glasses: 0,
+  glassesColor: 8,
+  band: 0,
+  bandColor: 1,
+  neck: 0,
+  neckColor: 1,
+  face: 0,
+  faceColor: 9,
 };
 
 export const AVATAR_LIMITS: Record<keyof Avatar, number> = {
@@ -99,6 +134,16 @@ export const AVATAR_LIMITS: Record<keyof Avatar, number> = {
   onepieceColor: CLOTH_COLORS.length,
   shoes: SHOES.length,
   shoesColor: CLOTH_COLORS.length,
+  hat: HATS.length,
+  hatColor: CLOTH_COLORS.length,
+  glasses: GLASSES.length,
+  glassesColor: CLOTH_COLORS.length,
+  band: BANDS.length,
+  bandColor: CLOTH_COLORS.length,
+  neck: NECKS.length,
+  neckColor: CLOTH_COLORS.length,
+  face: 1 << FACE_ITEMS.length, // any combination
+  faceColor: CLOTH_COLORS.length,
 };
 
 export const AVATAR_KEYS = Object.keys(AVATAR_LIMITS) as (keyof Avatar)[];
@@ -109,7 +154,8 @@ export interface Category {
   label: string;
   colors?: number[]; // shown as color swatches
   names?: string[]; // shown as text buttons
-  group: 'Character' | 'Body' | 'Hair' | 'Clothes';
+  multi?: boolean; // several can be picked: the value is a bit per option
+  group: 'Character' | 'Body' | 'Hair' | 'Clothes' | 'Extras';
   // Only shown when this returns true (e.g. a color for a slot that has something in it)
   when?: (a: Avatar) => boolean;
 }
@@ -133,6 +179,16 @@ export const CATEGORIES: Category[] = [
   { key: 'onepieceColor', label: 'Overalls color', colors: CLOTH_COLORS, group: 'Clothes', when: (a) => custom(a) && a.onepiece > 0 },
   { key: 'shoes', label: 'Shoes', names: SHOES, group: 'Clothes', when: custom },
   { key: 'shoesColor', label: 'Shoes color', colors: CLOTH_COLORS, group: 'Clothes', when: (a) => custom(a) && a.shoes > 0 },
+  { key: 'hat', label: 'Hat', names: HATS, group: 'Extras', when: custom },
+  { key: 'hatColor', label: 'Hat color', colors: CLOTH_COLORS, group: 'Extras', when: (a) => custom(a) && a.hat > 0 },
+  { key: 'glasses', label: 'Glasses', names: GLASSES, group: 'Extras', when: custom },
+  { key: 'glassesColor', label: 'Glasses color', colors: CLOTH_COLORS, group: 'Extras', when: (a) => custom(a) && a.glasses > 0 },
+  { key: 'band', label: 'Headband', names: BANDS, group: 'Extras', when: custom },
+  { key: 'bandColor', label: 'Headband color', colors: CLOTH_COLORS, group: 'Extras', when: (a) => custom(a) && a.band > 0 },
+  { key: 'neck', label: 'Neck', names: NECKS, group: 'Extras', when: custom },
+  { key: 'neckColor', label: 'Neck color', colors: CLOTH_COLORS, group: 'Extras', when: (a) => custom(a) && a.neck > 0 },
+  { key: 'face', label: 'Piercings & tattoos (pick any)', names: FACE_ITEMS, multi: true, group: 'Extras', when: custom },
+  { key: 'faceColor', label: 'Piercing & tattoo color', colors: CLOTH_COLORS, group: 'Extras', when: (a) => custom(a) && a.face > 0 },
 ];
 
 // Turns anything (such as an empty or old-format database value) into a valid avatar.

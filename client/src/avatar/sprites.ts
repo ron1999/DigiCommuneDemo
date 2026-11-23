@@ -14,7 +14,13 @@
 //   columns = 0 standing, 1..WALK_FRAMES walk cycle
 
 import {
+  BAND_FILES,
   BOTTOM_FILES,
+  FACE_FILES,
+  GLASSES_FILES,
+  HAIR_TUCKED_UNDER_HAT,
+  HAT_FILES,
+  NECK_FILES,
   CLOTH_COLORS,
   HAIR_COLORS,
   HAIR_FILES,
@@ -54,23 +60,41 @@ export function headHeightFor(a: Avatar): number {
 const SPRITE_DIR = 'sprites/';
 
 // Layer files for a look, back to front. A missing file is simply skipped.
-function layerFiles(a: Avatar): { file: string; tint?: number }[] {
+interface Layer {
+  file: string;
+  tint?: number;
+  mask?: string; // erase this layer where the mask file is opaque (hair under a hat)
+}
+
+function layerFiles(a: Avatar): Layer[] {
   const body = bodyName(a) + '.png';
-  const layers: { file: string; tint?: number }[] = [{ file: 'bodies/' + SKIN_DIRS[a.skin] + body }];
-  const add = (dir: string, tint: number) => dir && layers.push({ file: dir + '/' + body, tint });
-  const clothes = (dir: string, color: number) => add(dir && 'clothing/' + dir, CLOTH_COLORS[color]);
+  const layers: Layer[] = [{ file: 'bodies/' + SKIN_DIRS[a.skin] + body }];
+  const add = (dir: string, tint: number, mask?: string) =>
+    dir && layers.push({ file: 'head/' + dir + '/' + body, tint, mask });
+  const clothes = (dir: string, color: number) =>
+    dir && layers.push({ file: 'clothing/' + dir + '/' + body, tint: CLOTH_COLORS[color] });
   // Overalls replace the bottom
   if (!a.onepiece) clothes(BOTTOM_FILES[a.bottom], a.bottomColor);
   clothes(SHOE_FILES[a.shoes], a.shoesColor);
   clothes(TOP_FILES[a.top], a.topColor);
   clothes(ONEPIECE_FILES[a.onepiece], a.onepieceColor);
-  add(HAIR_FILES[a.hairStyle] && 'head/' + HAIR_FILES[a.hairStyle], HAIR_COLORS[a.hairColor]);
+  // Head items: neck, face, hair, headband, hat, glasses (see sprites/head/items.json)
+  add(NECK_FILES[a.neck], CLOTH_COLORS[a.neckColor]);
+  FACE_FILES.forEach((f, i) => a.face & (1 << i) && add(f, CLOTH_COLORS[a.faceColor]));
+  const hat = HAT_FILES[a.hat];
+  const hair = HAIR_FILES[a.hairStyle];
+  if (!(hat && HAIR_TUCKED_UNDER_HAT.includes(hair))) {
+    add(hair, HAIR_COLORS[a.hairColor], hat ? 'head/' + hat + '/mask/' + body : undefined);
+  }
+  add(BAND_FILES[a.band], CLOTH_COLORS[a.bandColor]);
+  add(hat, CLOTH_COLORS[a.hatColor]);
+  add(GLASSES_FILES[a.glasses], CLOTH_COLORS[a.glassesColor]);
   return layers;
 }
 
 function filesFor(a: Avatar): string[] {
   if (a.preset > 0 && PRESET_FILES[a.preset]) return [presetFile(a.preset)];
-  return layerFiles(a).map((l) => l.file);
+  return layerFiles(a).flatMap((l) => (l.mask ? [l.file, l.mask] : [l.file]));
 }
 
 function presetFile(preset: number): string {
@@ -166,6 +190,18 @@ function tintLayer(file: string, img: HTMLImageElement, color: number): HTMLCanv
   return c;
 }
 
+// A copy of a layer with everything under the mask's opaque pixels erased
+function masked(art: CanvasImageSource & { width: number; height: number }, mask: HTMLImageElement): HTMLCanvasElement {
+  const c = document.createElement('canvas');
+  c.width = art.width;
+  c.height = art.height;
+  const ctx = c.getContext('2d')!;
+  ctx.drawImage(art, 0, 0);
+  ctx.globalCompositeOperation = 'destination-out';
+  ctx.drawImage(mask, 0, 0);
+  return c;
+}
+
 // ---------- height ----------
 // Port of stretchRows/stretchImage in scripts/body-shapes.mjs: rows in the legs (60%) and
 // torso (40%) are repeated (taller) or dropped (shorter); the feet stay where they are.
@@ -241,7 +277,9 @@ function draw(a: Avatar, c: HTMLCanvasElement): void {
   for (const layer of layerFiles(a)) {
     const img = images.get(layer.file);
     if (!img) continue;
-    sctx.drawImage(layer.tint === undefined ? img : tintLayer(layer.file, img, layer.tint), 0, 0);
+    const art = layer.tint === undefined ? img : tintLayer(layer.file, img, layer.tint);
+    const mask = layer.mask ? images.get(layer.mask) : null;
+    sctx.drawImage(mask ? masked(art, mask) : art, 0, 0);
   }
 
   const d = HEIGHT_PX[a.height];

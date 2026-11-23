@@ -50,7 +50,10 @@ function renderPreview(): void {
 
 function refreshSelection(): void {
   buttons.forEach((list, key) => {
-    list.forEach((btn, i) => btn.classList.toggle('selected', current[key] === i));
+    const multi = CATEGORIES.find((c) => c.key === key)?.multi;
+    list.forEach((btn, i) =>
+      btn.classList.toggle('selected', multi ? (current[key] & (1 << i)) !== 0 : current[key] === i),
+    );
   });
 }
 
@@ -75,7 +78,7 @@ function build(): void {
 
   const tabs = document.createElement('div');
   tabs.className = 'w-tabs';
-  for (const g of ['Body', 'Hair', 'Clothes'] as const) {
+  for (const g of ['Body', 'Hair', 'Clothes', 'Extras'] as const) {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'w-btn';
@@ -117,7 +120,9 @@ function build(): void {
           return;
         }
         errorText.textContent = '';
-        current = { ...current, [cat.key]: i };
+        // Multi-pick rows toggle their option on/off; others pick one
+        const value = cat.multi ? current[cat.key] ^ (1 << i) : i;
+        current = { ...current, [cat.key]: value };
         refreshSelection();
         refreshRows();
         renderPreview();
