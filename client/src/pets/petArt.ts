@@ -1,147 +1,126 @@
 import Phaser from 'phaser';
 import { SPECIES } from './species';
 
-// PLACEHOLDER pet art drawn in code: one 64x64 picture per species, facing down.
-// The follower bobs and flips it to look alive. Real art can replace this later.
-// Drawn on a plain canvas so both the game and the HTML panels can use it.
+// Pet art: one sprite sheet per species in client/public/sprites/pets/<sheet>.png
+// (docs/ART_SPEC.md "Pets"): 48 x 48 frames, 5 columns x 4 rows. Rows: down, left, right, up.
+// Col 0 = standing, cols 1-4 = walk. The feet are at (24, 45) in every frame. Drawn at 1x.
+// Sheets load on demand; the same image is used by the game and the HTML panels.
 
-const D = 32; // designed at 32px, scaled 2x
-export const PET_SIZE = 64;
-const OUTLINE = '#2b2024';
+export const PET_FRAME = 48;
+const COLS = 5;
+export const PET_ORIGIN_Y = 45 / PET_FRAME; // feet
+export const PET_DIRS = ['down', 'left', 'right', 'up'] as const;
+export type PetDir = (typeof PET_DIRS)[number];
 
-const css = (c: number) => '#' + c.toString(16).padStart(6, '0');
+const images = new Map<string, HTMLImageElement>();
+const pending = new Map<string, Promise<HTMLImageElement | null>>();
 
-type Ctx = CanvasRenderingContext2D;
-
-function ellipse(g: Ctx, cx: number, cy: number, rx: number, ry: number, color: string): void {
-  g.fillStyle = color;
-  g.beginPath();
-  g.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
-  g.fill();
+function sheetOf(species: number): string {
+  return (SPECIES[species] ?? SPECIES[0]).sheet;
 }
 
-function blob(g: Ctx, cx: number, cy: number, rx: number, ry: number, color: number): void {
-  ellipse(g, cx, cy, rx + 1, ry + 1, OUTLINE);
-  ellipse(g, cx, cy, rx, ry, css(color));
+function loadSheet(sheet: string): Promise<HTMLImageElement | null> {
+  const hit = images.get(sheet);
+  if (hit) return Promise.resolve(hit);
+  let p = pending.get(sheet);
+  if (!p) {
+    p = new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        images.set(sheet, img);
+        resolve(img);
+      };
+      img.onerror = () => resolve(null);
+      img.src = 'sprites/pets/' + sheet + '.png';
+    });
+    pending.set(sheet, p);
+  }
+  return p;
 }
 
-function rect(g: Ctx, x: number, y: number, w: number, h: number, color: string): void {
-  g.fillStyle = color;
-  g.fillRect(x, y, w, h);
+export function petTextureKey(species: number): string {
+  return 'pet_' + sheetOf(species);
 }
 
-function tri(g: Ctx, x1: number, y1: number, x2: number, y2: number, x3: number, y3: number, color: string): void {
-  g.fillStyle = color;
-  g.beginPath();
-  g.moveTo(x1, y1);
-  g.lineTo(x2, y2);
-  g.lineTo(x3, y3);
-  g.fill();
+export function petAnimKey(species: number, dir: PetDir): string {
+  return petTextureKey(species) + '_walk_' + dir;
 }
 
-function eyes(g: Ctx, y: number, gap: number): void {
-  rect(g, 16 - gap - 2, y, 2, 3, '#222222');
-  rect(g, 16 + gap, y, 2, 3, '#222222');
-  rect(g, 16 - gap - 2, y, 1, 1, '#ffffff');
-  rect(g, 16 + gap, y, 1, 1, '#ffffff');
+export function petStandFrame(dir: PetDir): number {
+  return PET_DIRS.indexOf(dir) * COLS;
 }
 
-const painters: ((g: Ctx, body: number, accent: number) => void)[] = [
-  // Mossling: round fluffball with a sprout
-  (g, body, accent) => {
-    blob(g, 16, 21, 10, 8, body);
-    rect(g, 15, 8, 2, 6, css(accent));
-    blob(g, 12, 9, 3, 2, accent);
-    blob(g, 20, 9, 3, 2, accent);
-    eyes(g, 19, 3);
-    rect(g, 8, 23, 3, 2, '#ff9fb0');
-    rect(g, 21, 23, 3, 2, '#ff9fb0');
-  },
-  // Pebblet: little beetle
-  (g, body, accent) => {
-    blob(g, 16, 20, 10, 9, accent);
-    blob(g, 16, 19, 8, 7, body);
-    rect(g, 15, 12, 2, 14, css(accent));
-    rect(g, 9, 9, 1, 4, OUTLINE);
-    rect(g, 22, 9, 1, 4, OUTLINE);
-    eyes(g, 26, 3);
-  },
-  // Fluffin: cloud-puff bird
-  (g, body, accent) => {
-    blob(g, 10, 20, 6, 5, body);
-    blob(g, 22, 20, 6, 5, body);
-    blob(g, 16, 17, 8, 8, body);
-    tri(g, 14, 20, 18, 20, 16, 23, '#f2a03d');
-    eyes(g, 15, 3);
-    rect(g, 14, 8, 4, 3, css(accent));
-  },
-  // Glimmoth: glowing moth
-  (g, body, accent) => {
-    blob(g, 9, 15, 7, 8, body);
-    blob(g, 23, 15, 7, 8, body);
-    ellipse(g, 9, 15, 2, 2, '#fff3b0');
-    ellipse(g, 23, 15, 2, 2, '#fff3b0');
-    blob(g, 16, 19, 4, 8, accent);
-    eyes(g, 15, 1);
-  },
-  // Snorbit: snail with a planet shell
-  (g, body, accent) => {
-    blob(g, 16, 25, 12, 3, body);
-    blob(g, 18, 17, 8, 8, accent);
-    ellipse(g, 18, 17, 10, 1.5, '#f5d58f');
-    blob(g, 8, 20, 4, 5, body);
-    rect(g, 6, 18, 2, 3, '#222222');
-  },
-  // Quillip: hedgehog with soft quills
-  (g, body, accent) => {
-    for (let i = 0; i < 7; i++) tri(g, 6 + i * 3, 16, 9 + i * 3, 6 + (i % 2) * 3, 12 + i * 3, 16, css(accent));
-    blob(g, 16, 20, 10, 8, accent);
-    blob(g, 16, 22, 7, 6, body);
-    eyes(g, 20, 3);
-    rect(g, 15, 24, 2, 2, OUTLINE);
-  },
-];
-
-const pictures = new Map<number, HTMLCanvasElement>();
-
-// The 64x64 picture of a species
-export function petPicture(species: number): HTMLCanvasElement {
-  const hit = pictures.get(species);
-  if (hit) return hit;
-  const sp = SPECIES[species] ?? SPECIES[0];
-
-  const design = document.createElement('canvas');
-  design.width = D;
-  design.height = D;
-  (painters[species] ?? painters[0])(design.getContext('2d')!, sp.body, sp.accent);
-
-  const c = document.createElement('canvas');
-  c.width = PET_SIZE;
-  c.height = PET_SIZE;
-  const ctx = c.getContext('2d')!;
-  ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(design, 0, 0, PET_SIZE, PET_SIZE);
-  pictures.set(species, c);
-  return c;
-}
-
-export function ensurePetTexture(scene: Phaser.Scene, species: number): string {
-  const key = 'pet_' + species;
-  if (!scene.textures.exists(key)) scene.textures.addCanvas(key, petPicture(species));
+// Makes sure the species' sheet is a Phaser texture with its 4 walk animations.
+// Calls onReady (maybe right away) once it is; returns the texture key.
+export function ensurePetTexture(scene: Phaser.Scene, species: number, onReady: () => void): string {
+  const key = petTextureKey(species);
+  if (scene.textures.exists(key)) {
+    onReady();
+    return key;
+  }
+  void loadSheet(sheetOf(species)).then((img) => {
+    if (!img || !scene.sys || !scene.sys.isActive()) return;
+    if (!scene.textures.exists(key)) {
+      scene.textures.addSpriteSheet(key, img, { frameWidth: PET_FRAME, frameHeight: PET_FRAME });
+      PET_DIRS.forEach((dir, row) => {
+        const anim = petAnimKey(species, dir);
+        if (scene.anims.exists(anim)) return;
+        scene.anims.create({
+          key: anim,
+          frames: scene.anims.generateFrameNumbers(key, { start: row * COLS + 1, end: row * COLS + 4 }),
+          frameRate: 8,
+          repeat: -1,
+        });
+      });
+    }
+    onReady();
+  });
   return key;
 }
 
-// Draws a pet into a panel canvas. silhouette = a dark shape for pets not found yet.
+// Draws a pet (standing, facing down) into a panel canvas, scaled up with crisp pixels.
+// silhouette = a dark shape for pets not found yet. Draws once the sheet has loaded.
+const boxes = new Map<string, { x: number; y: number; w: number; h: number }>();
+
+// The visible part of the standing, facing-down frame
+function standBox(sheet: string, img: HTMLImageElement): { x: number; y: number; w: number; h: number } {
+  const hit = boxes.get(sheet);
+  if (hit) return hit;
+  const c = document.createElement('canvas');
+  c.width = PET_FRAME;
+  c.height = PET_FRAME;
+  const g = c.getContext('2d')!;
+  g.drawImage(img, 0, 0, PET_FRAME, PET_FRAME, 0, 0, PET_FRAME, PET_FRAME);
+  const d = g.getImageData(0, 0, PET_FRAME, PET_FRAME).data;
+  let x0 = PET_FRAME, y0 = PET_FRAME, x1 = 0, y1 = 0;
+  for (let y = 0; y < PET_FRAME; y++)
+    for (let x = 0; x < PET_FRAME; x++)
+      if (d[(y * PET_FRAME + x) * 4 + 3] > 0) {
+        x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y);
+      }
+  const box = x1 >= x0 ? { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 } : { x: 0, y: 0, w: PET_FRAME, h: PET_FRAME };
+  boxes.set(sheet, box);
+  return box;
+}
+
 export function drawPetIcon(species: number, ctx: CanvasRenderingContext2D, silhouette = false): void {
-  const w = ctx.canvas.width;
-  const h = ctx.canvas.height;
-  ctx.clearRect(0, 0, w, h);
-  ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(petPicture(species), 0, 0, w, h);
-  if (silhouette) {
-    ctx.globalCompositeOperation = 'source-in';
-    ctx.fillStyle = '#1b1b1b';
-    ctx.fillRect(0, 0, w, h);
-    ctx.globalCompositeOperation = 'source-over';
-  }
+  const sheet = sheetOf(species);
+  void loadSheet(sheet).then((img) => {
+    const w = ctx.canvas.width;
+    const h = ctx.canvas.height;
+    ctx.clearRect(0, 0, w, h);
+    if (!img) return;
+    ctx.imageSmoothingEnabled = false;
+    // Crop to the pet and scale by a whole number so the pixels stay square
+    const b = standBox(sheet, img);
+    const scale = Math.max(1, Math.floor(Math.min((w - 4) / b.w, (h - 4) / b.h)));
+    const dw = b.w * scale, dh = b.h * scale;
+    ctx.drawImage(img, b.x, b.y, b.w, b.h, Math.round((w - dw) / 2), Math.round((h - dh) / 2), dw, dh);
+    if (silhouette) {
+      ctx.globalCompositeOperation = 'source-in';
+      ctx.fillStyle = '#1b1b1b';
+      ctx.fillRect(0, 0, w, h);
+      ctx.globalCompositeOperation = 'source-over';
+    }
+  });
 }

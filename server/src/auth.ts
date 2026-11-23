@@ -14,7 +14,7 @@ export interface VerifiedUser {
   pet: PetInfo | null; // the pet following them, if any
 }
 
-const MAX_SPECIES = 5; // must match SPECIES in client/src/pets/species.ts and 005_pets.sql
+const MAX_SPECIES = 6; // highest species id: must match SPECIES in client/src/pets/species.ts and 011_pets_cats_dogs.sql
 
 // Asks the database whether this player may enter ownerId's room (friends / public / blocked).
 // Uses the player's own login, so the database decides with its own rules.

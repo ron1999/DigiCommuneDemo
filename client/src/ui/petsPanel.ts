@@ -72,7 +72,7 @@ function renderStarterPicker(): void {
     const card = document.createElement('button');
     card.type = 'button';
     card.className = 'pet-card' + (pickedStarter === i ? ' selected' : '');
-    card.appendChild(icon(i, 64));
+    card.appendChild(icon(i, 96));
     const name = document.createElement('strong');
     name.textContent = s.name;
     const blurb = document.createElement('span');
@@ -117,7 +117,7 @@ function renderCollection(): void {
   for (const p of pets.list) {
     const row = document.createElement('div');
     row.className = 'pet-row';
-    row.appendChild(icon(p.species, 48));
+    row.appendChild(icon(p.species, 64));
     const info = document.createElement('div');
     info.className = 'pet-info';
     const name = document.createElement('strong');
@@ -157,7 +157,7 @@ function renderCollection(): void {
     const cell = document.createElement('div');
     cell.className = 'pet-cell';
     const have = found.has(i);
-    cell.appendChild(icon(i, 48, !have));
+    cell.appendChild(icon(i, 64, !have));
     const n = document.createElement('span');
     n.textContent = have ? s.name : '???';
     cell.appendChild(n);
