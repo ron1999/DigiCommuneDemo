@@ -57,7 +57,7 @@ server/src/
   avatar.ts          server-side avatar validation
   presence.ts        who is online and where (one server process; would need Redis presence to scale out)
 supabase/
-  001_profiles.sql, 002_fix_profile_access.sql, 003_economy.sql, 004_rooms.sql, 005_pets.sql, 006_friends.sql, 007_presets.sql, 008_shops_homes.sql, 009_body_types.sql, 010_accessories.sql, 011_pets_cats_dogs.sql   run in order in the Supabase SQL Editor
+  001_profiles.sql, 002_fix_profile_access.sql, 003_economy.sql, 004_rooms.sql, 005_pets.sql, 006_friends.sql, 007_presets.sql, 008_shops_homes.sql, 009_body_types.sql, 010_accessories.sql, 011_pets_cats_dogs.sql, 012_retire_face_items.sql   run in order in the Supabase SQL Editor
 ```
 
 ## Running locally
