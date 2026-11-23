@@ -1,0 +1,11 @@
+{
+  "name": "Round glasses",
+  "kind": "glasses",
+  "key": "blue",
+  "tint": true,
+  "made_with": "edit_image_pro_flash on the reference body's 3 standing views (6 generations per gender)",
+  "pixellab_jobs": {
+    "female": "307b1518-39da-457e-84e2-d45452096f57",
+    "male": "f79f100c-116d-4529-b60f-4fd047b421c0"
+  }
+}

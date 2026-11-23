@@ -1,0 +1,11 @@
+{
+  "name": "High ponytail",
+  "kind": "hair",
+  "key": "blue",
+  "tint": true,
+  "made_with": "edit_image_pro_flash on the reference body's 3 standing views (6 generations per gender)",
+  "pixellab_jobs": {
+    "male": "a9d555c4-ef65-4440-9c78-b9812bcb9e38",
+    "female": "ebe5e5ff-4731-422b-a65d-bfe2e373317e"
+  }
+}

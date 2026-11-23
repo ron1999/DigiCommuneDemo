@@ -1,0 +1,11 @@
+{
+  "name": "Buzz cut",
+  "kind": "hair",
+  "key": "blue",
+  "tint": true,
+  "made_with": "edit_image_pro_flash on the reference body's 3 standing views (6 generations per gender)",
+  "pixellab_jobs": {
+    "male": "9f3fd405-0ff2-462d-8989-3b27516b102d",
+    "female": "299cd26b-035d-4c35-a300-0276693c7227"
+  }
+}

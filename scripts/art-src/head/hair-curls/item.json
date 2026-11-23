@@ -1,0 +1,11 @@
+{
+  "name": "Big curls",
+  "kind": "hair",
+  "key": "blue",
+  "tint": true,
+  "made_with": "edit_image_pro_flash on the reference body's 3 standing views (6 generations per gender)",
+  "pixellab_jobs": {
+    "male": "e66d8321-790e-4843-82f6-e331994d2b22",
+    "female": "dd31de27-922e-471b-a517-04e4dfb09e45"
+  }
+}

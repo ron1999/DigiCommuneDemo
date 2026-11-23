@@ -1,0 +1,35 @@
+{
+  "name": "Cropped knit sweater",
+  "slot": "top",
+  "tint": true,
+  "made_with": "edit_animation on each key body's 4 walk frames per direction, pure magenta key (10 generations per direction)",
+  "pixellab_jobs": {
+    "male-average": {
+      "south": "542111ce-6b59-4557-b3a7-0bd7b6ec46a5",
+      "west": "7abd9ef4-08db-49a6-a9ef-e4540d49bef9",
+      "north": "eeb5e2c8-848d-46ae-abf8-e7ca8d1e2580"
+    }
+  },
+  "fits": {
+    "male-slim": "male-slim",
+    "male-slim-muscular": "male-slim",
+    "male-lean": "male-slim",
+    "male-lean-muscular": "male-slim",
+    "male-average": "male-average",
+    "male-average-muscular": "male-average",
+    "male-stocky": "male-average",
+    "male-stocky-muscular": "male-average",
+    "male-heavyset": "male-heavyset",
+    "male-heavyset-muscular": "male-heavyset",
+    "female-slim": "female-slim",
+    "female-slim-muscular": "female-slim",
+    "female-lean": "female-slim",
+    "female-lean-muscular": "female-slim",
+    "female-average": "female-average",
+    "female-average-muscular": "female-average",
+    "female-stocky": "female-average",
+    "female-stocky-muscular": "female-average",
+    "female-heavyset": "female-heavyset",
+    "female-heavyset-muscular": "female-heavyset"
+  }
+}

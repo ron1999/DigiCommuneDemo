@@ -1,0 +1,11 @@
+{
+  "name": "Wavy bob",
+  "kind": "hair",
+  "key": "blue",
+  "tint": true,
+  "made_with": "edit_image_pro_flash on the reference body's 3 standing views (6 generations per gender)",
+  "pixellab_jobs": {
+    "female": "68d7f716-9f27-4ab5-8883-d0c94c4bb7d7",
+    "male": "fc07462e-2073-490e-8a54-6fc11438a1f6"
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "_about": "Skin tones in wardrobe order. ramp null = the original sheet in sprites/bodies/; otherwise sprites/bodies/skins/<id>/<body>.png. swatch = colour to show in the picker.",
+  "tones": [
+    {
+      "id": "porcelain",
+      "name": "Porcelain",
+      "file": "skins/porcelain/",
+      "swatch": "#fce3d6"
+    },
+    {
+      "id": "fair",
+      "name": "Fair",
+      "file": "skins/fair/",
+      "swatch": "#fbd5b6"
+    },
+    {
+      "id": "sunset",
+      "name": "Sunset",
+      "file": "",
+      "swatch": "#f7b37d"
+    },
+    {
+      "id": "golden",
+      "name": "Golden",
+      "file": "skins/golden/",
+      "swatch": "#f2cb88"
+    },
+    {
+      "id": "olive",
+      "name": "Olive",
+      "file": "skins/olive/",
+      "swatch": "#ecc99b"
+    },
+    {
+      "id": "tan",
+      "name": "Tan",
+      "file": "skins/tan/",
+      "swatch": "#e7b881"
+    },
+    {
+      "id": "brown",
+      "name": "Brown",
+      "file": "skins/brown/",
+      "swatch": "#d4a576"
+    },
+    {
+      "id": "umber",
+      "name": "Umber",
+      "file": "skins/umber/",
+      "swatch": "#c28a6a"
+    },
+    {
+      "id": "deep",
+      "name": "Deep",
+      "file": "skins/deep/",
+      "swatch": "#a5725b"
+    },
+    {
+      "id": "ebony",
+      "name": "Ebony",
+      "file": "skins/ebony/",
+      "swatch": "#90665a"
+    }
+  ]
+}

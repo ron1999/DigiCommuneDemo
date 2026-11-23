@@ -1,0 +1,35 @@
+{
+  "name": "Work boots",
+  "slot": "shoes",
+  "tint": true,
+  "made_with": "edit_animation on each key body's 4 walk frames per direction, pure magenta key (10 generations per direction)",
+  "pixellab_jobs": {
+    "male-average": {
+      "south": "7ea48be7-c717-445b-8f34-014c755a1861",
+      "west": "c1863e83-53d9-4e9c-babb-676c19266672",
+      "north": "64c28be3-7c0b-425b-afcb-0c38c1636fdb"
+    }
+  },
+  "fits": {
+    "male-slim": "male-slim",
+    "male-slim-muscular": "male-slim",
+    "male-lean": "male-slim",
+    "male-lean-muscular": "male-slim",
+    "male-average": "male-average",
+    "male-average-muscular": "male-average",
+    "male-stocky": "male-average",
+    "male-stocky-muscular": "male-average",
+    "male-heavyset": "male-heavyset",
+    "male-heavyset-muscular": "male-heavyset",
+    "female-slim": "female-slim",
+    "female-slim-muscular": "female-slim",
+    "female-lean": "female-slim",
+    "female-lean-muscular": "female-slim",
+    "female-average": "female-average",
+    "female-average-muscular": "female-average",
+    "female-stocky": "female-average",
+    "female-stocky-muscular": "female-average",
+    "female-heavyset": "female-heavyset",
+    "female-heavyset-muscular": "female-heavyset"
+  }
+}

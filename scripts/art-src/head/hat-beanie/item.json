@@ -1,0 +1,11 @@
+{
+  "name": "Knit beanie",
+  "kind": "hat",
+  "key": "blue",
+  "tint": true,
+  "made_with": "edit_image_pro_flash on the reference body's 3 standing views (6 generations per gender)",
+  "pixellab_jobs": {
+    "female": "ef78043f-ba5b-4ef3-95e5-53e12d7f0a70",
+    "male": "f08c0371-9b54-4555-9bc5-aa3417abff59"
+  }
+}

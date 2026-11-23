@@ -9,7 +9,10 @@
 //   3. places every frame with the feet on y = 116, centered, and stretches each direction
 //      so the standing frame is exactly BASE_HEIGHT tall (same rows for the whole direction,
 //      so the walk bob is kept)
-//   4. writes client/public/sprites/bodies/<name>.png: 640 x 512, rows down/left/right/up,
+//   4. stamps the same clean reference head on every frame (scripts/stamp-heads.mjs) and
+//      replaces walk frames the AI broke
+//   5. gives every frame the shared dark outline (scripts/outline.mjs)
+//   6. writes client/public/sprites/bodies/<name>.png: 640 x 512, rows down/left/right/up,
 //      col 0 standing (the walk frame with the legs closest together) + cols 1-4 walk.
 //      Right = left mirrored.
 
@@ -19,6 +22,8 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readPng, newImage, writePng } from './png.mjs';
 import { paletteOf, fixWalkFrame } from './walk-shading.mjs';
+import { applyOutline } from './outline.mjs';
+import { stampHead, foreignHeadPixels } from './stamp-heads.mjs';
 import { BASE_HEIGHT, bbox, stretchRows, stretchImage } from './body-shapes.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -76,6 +81,40 @@ function placeDirection(frames) {
   return placed.map((f) => stretchImage(f, rows, d));
 }
 
+// Drops tiny floating bits (fewer than 6 pixels not touching the figure), e.g. a stray pixel
+// above the head that would throw off head finding.
+function removeSpecks(img) {
+  const W = img.width, H = img.height, seen = new Uint8Array(W * H);
+  for (let s0 = 0; s0 < W * H; s0++) {
+    if (seen[s0] || img.data[s0 * 4 + 3] < 128) continue;
+    const blob = [s0];
+    seen[s0] = 1;
+    for (let i = 0; i < blob.length; i++) {
+      const x = blob[i] % W, y = Math.floor(blob[i] / W);
+      for (let oy = -1; oy <= 1; oy++)
+        for (let ox = -1; ox <= 1; ox++) {
+          const nx = x + ox, ny = y + oy;
+          if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+          const n = ny * W + nx;
+          if (!seen[n] && img.data[n * 4 + 3] >= 128) { seen[n] = 1; blob.push(n); }
+        }
+    }
+    if (blob.length < 6) for (const k of blob) img.data[k * 4 + 3] = 0;
+  }
+  return img;
+}
+
+const copy = (img) => ({ width: img.width, height: img.height, data: new Uint8Array(img.data) });
+function mirror(img) {
+  const out = newImage(FRAME, FRAME);
+  for (let y = 0; y < FRAME; y++)
+    for (let x = 0; x < FRAME; x++) {
+      const i = (y * FRAME + x) * 4;
+      out.data.set(img.data.subarray(i, i + 4), (y * FRAME + FRAME - 1 - x) * 4);
+    }
+  return out;
+}
+
 function blit(sheet, img, col, row, mirror) {
   for (let y = 0; y < FRAME; y++)
     for (let x = 0; x < FRAME; x++) {
@@ -91,8 +130,23 @@ for (const name of names) {
   const sheet = newImage(FRAME * COLS, FRAME * 4);
   for (const [d, row] of DIRS) {
     const pal = paletteOf(readPng(join(dir, 'rotations', `${d}.png`)));
-    const walk = [0, 1, 2, 3].map((i) => fixWalkFrame(readPng(join(dir, 'animations', 'walk4', d, `frame_00${i}.png`)), pal));
-    placeDirection(walk).forEach((f, col) => {
+    const walk = [0, 1, 2, 3].map((i) => removeSpecks(fixWalkFrame(readPng(join(dir, 'animations', 'walk4', d, `frame_00${i}.png`)), pal)));
+    const gender = name.startsWith('female') ? 'female' : 'male';
+    const frames = placeDirection(walk);
+    // A walk frame the AI broke (hair or background painted on the head) is replaced by the
+    // opposite step of the cycle (mirrored for front/back views, where that matches the pose).
+    for (let k = 1; k <= 4; k++) {
+      if (foreignHeadPixels(frames[k]) <= 40) continue;
+      const alt = frames[((k - 1 + 2) % 4) + 1];
+      frames[k] = d === 'west' ? copy(alt) : mirror(alt);
+      console.log(`  ${name} ${d} frame ${k}: replaced (broken head area)`);
+    }
+    // standing frame = the (fixed) walk frame with the legs closest together
+    const width = (img) => { const b = bbox(img); return b.x1 - b.x0; };
+    frames[0] = copy(frames.slice(1).reduce((best, f) => (width(f) < width(best) ? f : best)));
+    frames.forEach((f, col) => {
+      stampHead(f, gender, d);
+      applyOutline(f);
       blit(sheet, f, col, row, false);
       if (d === 'west') blit(sheet, f, col, 2, true);
     });

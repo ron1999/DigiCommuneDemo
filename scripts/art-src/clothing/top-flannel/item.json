@@ -1,0 +1,35 @@
+{
+  "name": "Flannel shirt",
+  "slot": "top",
+  "tint": true,
+  "made_with": "edit_animation on each key body's 4 walk frames per direction, pure magenta key (10 generations per direction)",
+  "pixellab_jobs": {
+    "male-average": {
+      "south": "e325ba1e-d31e-4892-bf62-4b0c0014cb5d",
+      "west": "47e36f6b-c297-4908-97e9-4e2aeaa8d2ca",
+      "north": "72d8f522-d107-4f1d-898b-0cb6512f9668"
+    }
+  },
+  "fits": {
+    "male-slim": "male-slim",
+    "male-slim-muscular": "male-slim",
+    "male-lean": "male-slim",
+    "male-lean-muscular": "male-slim",
+    "male-average": "male-average",
+    "male-average-muscular": "male-average",
+    "male-stocky": "male-average",
+    "male-stocky-muscular": "male-average",
+    "male-heavyset": "male-heavyset",
+    "male-heavyset-muscular": "male-heavyset",
+    "female-slim": "female-slim",
+    "female-slim-muscular": "female-slim",
+    "female-lean": "female-slim",
+    "female-lean-muscular": "female-slim",
+    "female-average": "female-average",
+    "female-average-muscular": "female-average",
+    "female-stocky": "female-average",
+    "female-stocky-muscular": "female-average",
+    "female-heavyset": "female-heavyset",
+    "female-heavyset-muscular": "female-heavyset"
+  }
+}

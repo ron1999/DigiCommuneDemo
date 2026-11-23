@@ -1,0 +1,11 @@
+{
+  "name": "Space buns",
+  "kind": "hair",
+  "key": "blue",
+  "tint": true,
+  "made_with": "edit_image_pro_flash on the reference body's 3 standing views (6 generations per gender)",
+  "pixellab_jobs": {
+    "male": "730b52a3-d856-40c7-bb2c-1de98050f6a6",
+    "female": "243d080c-a7e2-4fce-89c8-c27980799064"
+  }
+}

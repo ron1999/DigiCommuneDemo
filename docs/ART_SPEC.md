@@ -122,7 +122,7 @@ The character system is built on Sprout's style. Per gender (male, female) there
 That gives 20 bodies: `client/public/sprites/bodies/<gender>-<build>[-muscular].png`, each a
 640 x 512 sheet in the same layout as the layer sheets (rows down/left/right/up, col 0 standing +
 4 walk frames, feet on y = 116, standing frame exactly 97 px tall). Bodies are bald (hair is a
-layer) in a plain white tank top and grey shorts (underwear), one warm skin tone for now.
+layer) in a plain white tank top and grey shorts (underwear), skin in the original "Sunset" tone.
 
 How they were made (about 190 generations in total):
 1. One `create_image_pro_flash` 208 x 128 image per gender per muscle (5 figures, slim to
@@ -141,10 +141,74 @@ How they were made (about 190 generations in total):
    sometimes puts cloth colours on bare legs; every pixel is mapped back onto the standing art's
    own colours with shadow and highlight limits), normalizes the height and writes the sheets.
 
-Clothing will be fitted to 6 key bodies only (per gender: slim, average, heavyset; lean -> slim,
-stocky -> average, soft and muscular share a fit), to keep PixelLab costs at about 180
-generations per item instead of 600. Head items (hair, hats, glasses, bandanas, piercings)
-are planned as one sheet per gender placed per frame, still to be tested.
+**Skin tones** (10, free, `node scripts/skin-tones.mjs [--preview out.png]`): a palette swap, not
+a tint. Every skin pixel (warm and saturated) is mapped to one of 8 brightness steps and repainted
+with that step of a hand-picked 8-colour ramp (shadows lean red, highlights warm), so shading
+stays crisp. Output: `client/public/sprites/bodies/skins/<tone>/<body>.png` plus `skins.json`
+(wardrobe order, names, swatch). The original sheets are the "Sunset" tone. Run it again after
+rebuilding the bodies. To add or change a tone, edit `TONES` in the script.
+
+**Outline:** every body and every item gets the same dark outline, #1B110A (`scripts/outline.mjs`:
+near-black lines are unified to it and every silhouette edge pixel is set to it). New art
+pipelines must call `applyOutline()` too.
+
+**Head items** (hair, hats, glasses, bandanas, piercings) are drawn ONCE per gender and placed on
+every body by following the head (`node scripts/build-head-items.mjs <item>`):
+1. The three standing views (front, side, back) of the reference body (`male-average` /
+   `female-average`) are put side by side in one 192 x 128 image (64 px per view, frame
+   columns 32-95).
+2. `edit_image_pro_flash` draws the item on all three views at once (6 generations per gender),
+   in one pure key colour (bright cobalt blue for tintable items like hair) so it cuts out
+   exactly. Save it as `scripts/art-src/head/<item>/<gender>.png` with an `item.json`
+   (`key`, `tint`).
+3. The script cuts the item out, turns tintable items grey (mid grey = chosen colour), adds the
+   shared outline, finds the head (top + centre) in every frame of every body, and writes
+   `client/public/sprites/head/<item>/<body>.png` (640 x 512, ready to stack).
+   Tintable items use the MEDIAN key brightness across all three views as mid grey, so every
+   view tints to the same colour.
+4. Hairstyles are unisex: each style is drawn on both reference bodies (12 generations per
+   style). Current set (2026-11-22): hair-messy, hair-bob, hair-buzz, hair-long, hair-curls,
+   hair-ponytail, hair-buns, hair-undercut, hair-locs, hair-spiky (+ Bald = no layer).
+   Rebuild one with `node scripts/build-head-items.mjs <id>`.
+
+**Faces** (2026-11-22): every body frame gets the SAME clean reference head per gender
+(`scripts/stamp-heads.mjs`, called by `build-body-sheets.mjs`): the frame's head is erased down
+to the chin and `scripts/art-src/heads/<gender>.png` (a PixelLab edit of the reference body's
+three views: clean bald scalp, crisp eyes with ONE pure green iris pixel each = eye colour key,
+brows, nose, mouth) is pasted on the frame's head position. Leftover hair stubs under the chin
+are cleaned and walk frames the AI broke (hair or background on the head, stray specks above
+the head) are replaced or fixed. After rebuilding the bodies, re-run `skin-tones.mjs` and
+`build-head-items.mjs` for every item.
+
+**Clothing** (`node scripts/build-clothing.mjs <item>`): PixelLab `edit_animation` draws the
+garment on a KEY body's 4 walk frames per direction (10 generations per direction) in pure
+magenta. The script cuts it out (magenta incl. pale pinks), makes it grey/tintable with the
+shared outline, and writes `client/public/sprites/clothing/<item>/<body>.png`. Bodies that
+borrow a key body's garment ("fits" in `scripts/art-src/clothing/<item>/item.json`) get it moved
+to follow their head, then CONFORMED: skin poking out past the garment's sides (up to 4 px) and
+small holes over skin are filled with fabric, row by row. Holes the AI leaves in a garment
+(transparent or unkeyed pixels inside it, tiny skin specks) are filled with the fabric around
+them; `"solidRows": true` (the skirt) fills every row edge to edge.
+
+Clothing is drawn on 6 key bodies only (per gender: slim, average, heavyset; lean -> slim,
+stocky -> average, soft and muscular share a fit), about 90 generations per item instead of 600.
+
+**Starter wardrobe (done, 12 items x 20 bodies)**, all grey/tintable, one slot each:
+
+| Slot | Items |
+|---|---|
+| `top` | `top-hoodie`, `top-tee`, `top-flannel`, `top-sweater` |
+| `bottom` | `bottom-jeans`, `bottom-cargo`, `bottom-skirt`, `bottom-trousers` |
+| `onepiece` | `onepiece-overalls` (worn over a top, replaces a bottom) |
+| `shoes` | `shoes-sneakers`, `shoes-boots`, `shoes-sandals` |
+
+Stacking order in the game: body (skin-tone sheet), bottom, shoes, top, onepiece, hair,
+headwear, face accessories, then the height stretch. Tint every clothing layer like hair (grey
+pixels only; the outline colour stays as is). Known small flaws: a dark shadow patch on one side
+frame of the heavyset overalls; 2-3 skin pixels on one female-average jeans frame.
+
+Fixing a bad AI frame: move the old `<dir>_1..4.png` aside, regenerate that one direction with a
+new seed, re-run the build. Frames from two runs of the same direction can be mixed.
 
 Every prompt starts with the owner's words, exactly: "Please no AI slop or generic vibe. I want
 it look like if stardew valley & scott pilgrims pixel art styles had a baby, not an exact copy

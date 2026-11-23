@@ -1,0 +1,35 @@
+{
+  "name": "Strappy sandals",
+  "slot": "shoes",
+  "tint": true,
+  "made_with": "edit_animation on each key body's 4 walk frames per direction, pure magenta key (10 generations per direction)",
+  "pixellab_jobs": {
+    "male-average": {
+      "south": "9be7b511-f02c-47ab-80c7-f510fbd4870c",
+      "west": "a2aab3fd-0e90-435d-87f0-47238bd6dbbd",
+      "north": "764d3061-4d35-4466-b2d8-63089a9486e4"
+    }
+  },
+  "fits": {
+    "male-slim": "male-slim",
+    "male-slim-muscular": "male-slim",
+    "male-lean": "male-slim",
+    "male-lean-muscular": "male-slim",
+    "male-average": "male-average",
+    "male-average-muscular": "male-average",
+    "male-stocky": "male-average",
+    "male-stocky-muscular": "male-average",
+    "male-heavyset": "male-heavyset",
+    "male-heavyset-muscular": "male-heavyset",
+    "female-slim": "female-slim",
+    "female-slim-muscular": "female-slim",
+    "female-lean": "female-slim",
+    "female-lean-muscular": "female-slim",
+    "female-average": "female-average",
+    "female-average-muscular": "female-average",
+    "female-stocky": "female-average",
+    "female-stocky-muscular": "female-average",
+    "female-heavyset": "female-heavyset",
+    "female-heavyset-muscular": "female-heavyset"
+  }
+}

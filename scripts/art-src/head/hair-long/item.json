@@ -1,0 +1,11 @@
+{
+  "name": "Long straight",
+  "kind": "hair",
+  "key": "blue",
+  "tint": true,
+  "made_with": "edit_image_pro_flash on the reference body's 3 standing views (6 generations per gender)",
+  "pixellab_jobs": {
+    "male": "8f84f13a-b903-4ce3-b012-2b8c8cee6254",
+    "female": "a5ed3d35-81ae-4afa-8166-cfd8e4e5c425"
+  }
+}

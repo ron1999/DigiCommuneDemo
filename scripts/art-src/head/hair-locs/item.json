@@ -1,0 +1,11 @@
+{
+  "name": "Shoulder locs",
+  "kind": "hair",
+  "key": "blue",
+  "tint": true,
+  "made_with": "edit_image_pro_flash on the reference body's 3 standing views (6 generations per gender)",
+  "pixellab_jobs": {
+    "male": "441c1cc9-ee7f-4b6b-a807-c9958b3f7e62",
+    "female": "69571d6e-74cc-415b-9143-52a90808204c"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "name": "Messy short hair",
+  "kind": "hair",
+  "key": "blue",
+  "tint": true,
+  "made_with": "edit_image_pro_flash on the reference body's 3 standing views (6 generations per gender)",
+  "pixellab_jobs": {
+    "male": "b1ab1be7-12a1-40fd-abf9-43a4a365c9a8",
+    "female": "e28c6d92-7c61-40b2-a601-ab858714e142"
+  }
+}

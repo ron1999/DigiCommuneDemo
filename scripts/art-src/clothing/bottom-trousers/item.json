@@ -1,0 +1,35 @@
+{
+  "name": "Wide-leg trousers",
+  "slot": "bottom",
+  "tint": true,
+  "made_with": "edit_animation on each key body's 4 walk frames per direction, pure magenta key (10 generations per direction)",
+  "pixellab_jobs": {
+    "male-average": {
+      "south": "81b578b0-d99f-417a-9b44-a17bf2a8a45c",
+      "west": "deaadfc2-61cb-46f3-bd0a-a3e2713a61e5",
+      "north": "8e23856c-3130-44d6-a745-65a0f16601bc"
+    }
+  },
+  "fits": {
+    "male-slim": "male-slim",
+    "male-slim-muscular": "male-slim",
+    "male-lean": "male-slim",
+    "male-lean-muscular": "male-slim",
+    "male-average": "male-average",
+    "male-average-muscular": "male-average",
+    "male-stocky": "male-average",
+    "male-stocky-muscular": "male-average",
+    "male-heavyset": "male-heavyset",
+    "male-heavyset-muscular": "male-heavyset",
+    "female-slim": "female-slim",
+    "female-slim-muscular": "female-slim",
+    "female-lean": "female-slim",
+    "female-lean-muscular": "female-slim",
+    "female-average": "female-average",
+    "female-average-muscular": "female-average",
+    "female-stocky": "female-average",
+    "female-stocky-muscular": "female-average",
+    "female-heavyset": "female-heavyset",
+    "female-heavyset-muscular": "female-heavyset"
+  }
+}

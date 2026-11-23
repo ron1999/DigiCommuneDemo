@@ -1,0 +1,11 @@
+{
+  "name": "Punk spikes",
+  "kind": "hair",
+  "key": "blue",
+  "tint": true,
+  "made_with": "edit_image_pro_flash on the reference body's 3 standing views (6 generations per gender)",
+  "pixellab_jobs": {
+    "male": "d6d2fa9e-ef7d-4422-a792-e2afa7fd4dae",
+    "female": "31279382-3a08-4b3f-aa26-c5695ca4923a"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "name": "Undercut",
+  "kind": "hair",
+  "key": "blue",
+  "tint": true,
+  "made_with": "edit_image_pro_flash on the reference body's 3 standing views (6 generations per gender)",
+  "pixellab_jobs": {
+    "male": "397ef946-f78a-4e44-81da-944a634d6001",
+    "female": "cfb5b5a5-69eb-4b26-bcfb-2dabb13115fa"
+  }
+}
