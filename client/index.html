@@ -150,8 +150,8 @@
         z-index: 15;
         touch-action: pan-y;
       }
-      #wardrobe-head, #decorate-head, #pets-head, #friends-head { display: flex; align-items: center; gap: 12px; }
-      #wardrobe-title, #decorate-title, #pets-title, #friends-title { font-size: 18px; font-weight: bold; }
+      #wardrobe-head, #decorate-head, #pets-head, #friends-head, #prop-head { display: flex; align-items: center; gap: 12px; }
+      #wardrobe-title, #decorate-title, #pets-title, #friends-title, #prop-title { font-size: 18px; font-weight: bold; }
       #wardrobe-preview {
         width: 96px;
         height: 96px;
@@ -159,7 +159,7 @@
         background: #33503a;
         border-radius: 8px;
       }
-      #wardrobe-body, #decorate-body, #pets-body, #friends-body {
+      #wardrobe-body, #decorate-body, #pets-body, #friends-body, #prop-body {
         flex: 1;
         overflow-y: auto;
         display: flex;
@@ -188,9 +188,9 @@
         cursor: pointer;
       }
       .w-swatch.selected { border-color: #fff; box-shadow: 0 0 0 2px #5cb85c; }
-      #wardrobe-error, #decorate-error, #pets-error, #friends-error { margin: 0; min-height: 16px; font-size: 13px; color: #ffb3b3; }
-      #wardrobe-actions, #decorate-actions, #pets-actions, #friends-actions { display: flex; gap: 8px; }
-      #wardrobe-actions button, #decorate-actions button, #pets-actions button, #friends-actions button {
+      #wardrobe-error, #decorate-error, #pets-error, #friends-error, #prop-error { margin: 0; min-height: 16px; font-size: 13px; color: #ffb3b3; }
+      #wardrobe-actions, #decorate-actions, #pets-actions, #friends-actions, #prop-actions { display: flex; gap: 8px; }
+      #wardrobe-actions button, #decorate-actions button, #pets-actions button, #friends-actions button, #prop-actions button {
         flex: 1;
         padding: 10px;
         border-radius: 8px;
@@ -200,7 +200,7 @@
       }
       #wardrobe-save, #decorate-save { background: #5cb85c; color: #fff; }
       #wardrobe-save:disabled, #decorate-save:disabled { opacity: 0.6; cursor: default; }
-      #wardrobe-cancel, #decorate-cancel, #pets-close, #friends-close { background: #4a4a4a; color: #fff; }
+      #wardrobe-cancel, #decorate-cancel, #pets-close, #friends-close, #prop-close { background: #4a4a4a; color: #fff; }
       @media (max-width: 700px) {
         .side-panel {
           top: auto;
@@ -215,7 +215,46 @@
 
       .d-opt { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; min-width: 64px; }
       .d-opt canvas { width: 48px; height: 32px; image-rendering: pixelated; }
-      #decorate-btn { display: none; }
+      #decorate-btn, #manage-btn, #store-btn { display: none; }
+      #store-btn { background: rgba(160, 110, 20, 0.85) !important; }
+
+      /* Place panel (houses and shops) */
+      .prop-note { font-size: 13px; opacity: 0.85; line-height: 1.35; }
+      .prop-inline { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+      .prop-input { flex: 1; min-width: 0; padding: 7px; border-radius: 6px; border: none; font-size: 15px; }
+      select.prop-input { max-width: 100%; }
+      .prop-num { flex: none; width: 64px; }
+
+      /* "You are leaving DigiCommune" warning */
+      #link-warn {
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 40;
+      }
+      #link-warn-box {
+        width: min(340px, 88vw);
+        padding: 18px;
+        border-radius: 12px;
+        background: #243824;
+        color: #fff;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      #link-warn-box h2 { margin: 0; font-size: 18px; }
+      #link-warn-box p { margin: 0; font-size: 14px; line-height: 1.4; }
+      #link-warn-url { font-size: 12px; opacity: 0.8; word-break: break-all; }
+      #link-warn-actions { display: flex; gap: 8px; }
+      #link-warn-actions button { flex: 1; padding: 10px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; color: #fff; }
+      #link-warn-cancel { background: #4a4a4a; }
+      #link-warn-go { background: #5cb85c; }
       .pet-icon { image-rendering: pixelated; flex: none; }
       .friend-row { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
       .friend-row.dim { opacity: 0.6; }
@@ -388,6 +427,8 @@
       <button id="pets-btn" type="button">Pets</button>
       <button id="place-btn" type="button">Home</button>
       <button id="decorate-btn" type="button">Decorate</button>
+      <button id="store-btn" type="button">Storefront</button>
+      <button id="manage-btn" type="button">Manage</button>
       <button id="logout" type="button">Log out</button>
     </div>
 
@@ -435,6 +476,30 @@
       <p id="pets-error"></p>
       <div id="pets-actions">
         <button id="pets-close" type="button">Close</button>
+      </div>
+    </div>
+
+    <div id="prop" class="side-panel">
+      <div id="prop-head">
+        <div id="prop-title">Place</div>
+      </div>
+      <div id="prop-body"></div>
+      <p id="prop-error"></p>
+      <div id="prop-actions">
+        <button id="prop-close" type="button">Close</button>
+      </div>
+    </div>
+
+    <div id="link-warn">
+      <div id="link-warn-box">
+        <h2>You are leaving DigiCommune</h2>
+        <p>This link opens <strong id="link-warn-host"></strong> in a new tab. Players add these links themselves and DigiCommune doesn't check other websites.</p>
+        <p>Never type your DigiCommune password on another site.</p>
+        <div id="link-warn-url"></div>
+        <div id="link-warn-actions">
+          <button id="link-warn-cancel" type="button">Stay here</button>
+          <button id="link-warn-go" type="button">Open link</button>
+        </div>
       </div>
     </div>
 

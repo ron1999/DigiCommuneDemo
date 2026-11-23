@@ -1,4 +1,5 @@
 import { MAP_H, MAP_W } from '../config';
+import { PROPERTIES } from './properties';
 
 // Tile indexes. They match the order of tiles drawn in tileset.ts.
 export const T = {
@@ -35,7 +36,9 @@ function seededRandom(seed: number): () => number {
   };
 }
 
-export function buildTownMap(): number[][] {
+// builtLots: ids of lots that someone has built a house or shop on.
+// Empty lots are drawn as a bare dirt plot (path tiles) with a sign on the door tile.
+export function buildTownMap(builtLots: ReadonlySet<number> = new Set()): number[][] {
   const rand = seededRandom(1234);
   const d: number[][] = Array.from({ length: MAP_H }, () =>
     Array<number>(MAP_W).fill(T.GRASS),
@@ -80,29 +83,22 @@ export function buildTownMap(): number[][] {
   }
 
   // Houses: a block of wall tiles with one door and a path to the main road
-  const house = (
-    x: number,
-    y: number,
-    w: number,
-    h: number,
-    doorX: number,
-    doorOnTop: boolean,
-  ) => {
-    for (let yy = y; yy < y + h; yy++) {
-      for (let xx = x; xx < x + w; xx++) d[yy][xx] = T.WALL;
-    }
-    d[doorOnTop ? y : y + h - 1][doorX] = T.DOOR;
+  const pathToRoad = (doorX: number, doorY: number, doorOnTop: boolean) => {
     if (doorOnTop) {
-      for (let yy = y - 1; yy >= 16; yy--) d[yy][doorX] = T.PATH;
+      for (let yy = doorY - 1; yy >= 16; yy--) d[yy][doorX] = T.PATH;
     } else {
-      for (let yy = y + h; yy <= 13; yy++) d[yy][doorX] = T.PATH;
+      for (let yy = doorY + 1; yy <= 13; yy++) d[yy][doorX] = T.PATH;
     }
   };
 
-  house(4, 3, 6, 5, 7, false);
-  house(13, 3, 5, 5, 15, false);
-  house(5, 19, 6, 5, 8, true);
-  house(26, 19, 7, 5, 29, true);
+  for (const p of PROPERTIES) {
+    const built = p.kind === 'building' || builtLots.has(p.id);
+    for (let yy = p.y; yy < p.y + p.h; yy++) {
+      for (let xx = p.x; xx < p.x + p.w; xx++) d[yy][xx] = built ? T.WALL : T.PATH;
+    }
+    if (built) d[p.door.y][p.door.x] = T.DOOR;
+    pathToRoad(p.door.x, p.door.y, p.doorOnTop);
+  }
 
   return d;
 }

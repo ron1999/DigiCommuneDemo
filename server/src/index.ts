@@ -28,6 +28,8 @@ const gameServer = new Server({
 // One shared town that everyone joins, and one home per player (matched by owner)
 gameServer.define('town', TownRoom);
 gameServer.define('home', TownRoom).filterBy(['owner']);
+// Houses and shops in town (claimed buildings and lots), matched by property id
+gameServer.define('property', TownRoom).filterBy(['property']);
 
 gameServer.listen(port).then(() => {
   console.log('DigiCommune server listening on port ' + port);

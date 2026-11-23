@@ -141,6 +141,7 @@ export function openDecorate(initial: RoomLayout): void {
   $('shop').style.display = 'none';
   $('pets').style.display = 'none';
   $('friends').style.display = 'none';
+  $('prop').style.display = 'none';
   panel.style.display = 'flex';
   render();
 }

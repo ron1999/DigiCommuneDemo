@@ -2,7 +2,7 @@
 // (One server process is plenty for the test version. With several servers this would
 // need Colyseus' Redis presence instead.)
 
-export type Where = 'town' | 'home' | 'visiting';
+export type Where = 'town' | 'home' | 'visiting' | 'place'; // place = a house or shop in town
 
 interface Entry {
   sessionId: string;

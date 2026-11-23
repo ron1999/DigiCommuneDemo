@@ -2,8 +2,9 @@ import { Client, Room } from 'colyseus.js';
 import type { Avatar } from '../avatar/avatar';
 import type { PetInfo } from '../pets/species';
 
-// Where a player is: the shared town, or someone's home (by account id)
-export type Place = { kind: 'town' } | { kind: 'home'; owner: string };
+// Where a player is: the shared town, someone's home (by account id),
+// or a house or shop in town (by property id)
+export type Place = { kind: 'town' } | { kind: 'home'; owner: string } | { kind: 'property'; id: number };
 
 export interface PlayerInfo {
   id: string;
@@ -44,7 +45,9 @@ export async function connectToPlace(
     const join =
       place.kind === 'home'
         ? client.joinOrCreate('home', { token, owner: place.owner })
-        : client.joinOrCreate('town', { token });
+        : place.kind === 'property'
+          ? client.joinOrCreate('property', { token, property: place.id })
+          : client.joinOrCreate('town', { token });
     return await Promise.race([join, timeout]);
   } finally {
     window.clearTimeout(timer);

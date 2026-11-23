@@ -116,6 +116,7 @@ export function openWardrobe(initial: Avatar, firstTime = false): void {
   $('shop').style.display = 'none';
   $('pets').style.display = 'none';
   $('friends').style.display = 'none';
+  $('prop').style.display = 'none';
   cancelDecorate();
   panel.style.display = 'flex';
   refreshSelection();

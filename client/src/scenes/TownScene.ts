@@ -20,6 +20,10 @@ import { petsPanel } from '../ui/petsPanel';
 import { friendsPanel } from '../ui/friendsPanel';
 import type { Where } from '../ui/friendsPanel';
 import { getRoom } from '../friends';
+import { builtLots, getProperty, loadTown, onTownChange, propertyInfo, savePropertyRoom, town } from '../properties';
+import type { PropertyInfo, PropertyUse } from '../properties';
+import { PROPERTIES, outsideDoor, propertyAtDoor } from '../world/properties';
+import { closePlacePanel, openClaim, openManage, openStore, placePanel } from '../ui/placePanel';
 import { RemotePlayer } from '../entities/RemotePlayer';
 import { connectToPlace } from '../net/network';
 import type { Place, PlayerInfo } from '../net/network';
@@ -45,7 +49,9 @@ export interface PlaceData {
   place?: Place;
   room?: RoomLayout; // for homes: what the room looks like
   mine?: boolean; // for homes: is it your own room?
-  ownerName?: string; // for homes: whose room it is
+  ownerName?: string; // for homes and properties: whose it is
+  propertyName?: string; // for properties: its name
+  propertyUse?: PropertyUse; // for properties: house or shop
   spawn?: { x: number; y: number }; // tile to appear on (town only)
 }
 
@@ -60,6 +66,10 @@ export class TownScene extends Phaser.Scene {
   private layout: RoomLayout | null = null; // homes only
   private mine = false; // at home: is it our own room?
   private ownerName = '';
+  private propertyName = '';
+  private propertyUse: PropertyUse | null = null;
+  private signs: Phaser.GameObjects.Text[] = [];
+  private lastTileKey = ''; // to notice stepping onto a new tile (doors)
   private onlineWaiters: ((places: Record<string, Where>) => void)[] = [];
 
   private player!: Phaser.Physics.Arcade.Sprite;
@@ -104,9 +114,13 @@ export class TownScene extends Phaser.Scene {
   create(data: PlaceData = {}): void {
     // The scene object is reused when travelling, so reset everything
     this.place = data.place ?? { kind: 'town' };
-    this.layout = this.place.kind === 'home' ? (data.room ?? null) : null;
-    this.mine = this.place.kind === 'home' && data.mine !== false;
+    this.layout = this.place.kind !== 'town' ? (data.room ?? null) : null;
+    this.mine = this.place.kind !== 'town' && data.mine !== false;
     this.ownerName = data.ownerName ?? '';
+    this.propertyName = data.propertyName ?? '';
+    this.propertyUse = this.place.kind === 'property' ? (data.propertyUse ?? 'home') : null;
+    this.signs = [];
+    this.lastTileKey = '';
     this.onlineWaiters = [];
     this.room = null;
     this.remotes = new Map();
@@ -150,7 +164,7 @@ export class TownScene extends Phaser.Scene {
     cam.startFollow(this.player, true, 0.12, 0.12);
     cam.setZoom(CAMERA_ZOOM);
     cam.roundPixels = true;
-    cam.setBackgroundColor(this.place.kind === 'home' ? '#2a211b' : '#1d2b1d');
+    cam.setBackgroundColor(this.isIndoors() ? '#2a211b' : '#1d2b1d');
 
     // Keyboard: arrow keys and WASD
     const keyboard = this.input.keyboard!;
@@ -184,7 +198,8 @@ export class TownScene extends Phaser.Scene {
     };
     decorate.onPreview = (layout) => this.applyLayout(layout);
     decorate.onSave = async (layout) => {
-      const saved = await saveMyRoom(layout);
+      const place = this.place;
+      const saved = place.kind === 'property' ? await savePropertyRoom(place.id, layout) : await saveMyRoom(layout);
       this.applyLayout(saved);
       this.room?.send('roomChanged'); // visitors see the new furniture
       toast('Room saved!');
@@ -196,6 +211,23 @@ export class TownScene extends Phaser.Scene {
     friendsPanel.guests = () =>
       this.mine ? Array.from(this.remotes.entries()).map(([id, r]) => ({ id, name: r.name })) : [];
     friendsPanel.onRemoveGuest = (id) => this.room?.send('removeVisitor', { id });
+
+    // Houses and shops
+    void myUserId().then((id) => (placePanel.myId = id)).catch(() => undefined);
+    placePanel.onGoHome = () => {
+      // Come back out in front of the door, not on it (or the claim panel would pop up again)
+      const t = this.currentTile();
+      const spot = propertyAtDoor(t.x, t.y);
+      void this.goHome(spot ? outsideDoor(spot) : undefined);
+    };
+    placePanel.onReleased = (id) => {
+      if (this.place.kind === 'property' && this.place.id === id) this.goToTown();
+    };
+    placePanel.guests = () =>
+      this.mine ? Array.from(this.remotes.entries()).map(([id, r]) => ({ id, name: r.name })) : [];
+    placePanel.onRemoveGuest = (id) => this.room?.send('removeVisitor', { id });
+    const stopTown = onTownChange(() => this.refreshTown());
+    if (this.place.kind === 'town') void loadTown().catch((err) => console.error('Could not load the town', err));
 
     this.setupTopbar();
 
@@ -220,6 +252,12 @@ export class TownScene extends Phaser.Scene {
       friendsPanel.queryOnline = null;
       friendsPanel.guests = null;
       friendsPanel.onRemoveGuest = null;
+      placePanel.onGoHome = null;
+      placePanel.onReleased = null;
+      placePanel.guests = null;
+      placePanel.onRemoveGuest = null;
+      stopTown();
+      closePlacePanel();
       this.onlineWaiters.forEach((w) => w({}));
       stopListening();
       const room = this.room;
@@ -254,8 +292,13 @@ export class TownScene extends Phaser.Scene {
 
   // ---------- building the town or a room ----------
 
+  // In a room, house or shop (not the town)
+  private isIndoors(): boolean {
+    return this.place.kind !== 'town';
+  }
+
   private placeSize(): { w: number; h: number } {
-    if (this.place.kind === 'home' && this.layout) {
+    if (this.isIndoors() && this.layout) {
       const t = templateById(this.layout.template);
       return { w: t.w, h: t.h };
     }
@@ -270,9 +313,9 @@ export class TownScene extends Phaser.Scene {
     this.map?.destroy();
     this.clearFurniture();
 
-    const isHome = this.place.kind === 'home' && this.layout;
+    const isHome = this.isIndoors() && this.layout;
     const template = isHome ? templateById(this.layout!.template) : null;
-    const data = template ? buildRoomMap(template) : buildTownMap();
+    const data = template ? buildRoomMap(template) : buildTownMap(builtLots());
 
     this.map = this.make.tilemap({ data, tileWidth: TILE_SIZE, tileHeight: TILE_SIZE });
     const tileset = this.map.addTilesetImage('tiles', 'tiles', TILE_SIZE, TILE_SIZE, 0, 0)!;
@@ -296,6 +339,91 @@ export class TownScene extends Phaser.Scene {
 
     this.colliders.push(this.physics.add.collider(this.player, this.layer));
     this.colliders.push(this.physics.add.collider(this.player, this.furniture));
+    if (!template) this.drawSigns();
+  }
+
+  // ---------- houses and shops in town ----------
+
+  // Someone claimed or gave up a place: redraw lots and signs
+  private refreshTown(): void {
+    if (this.place.kind !== 'town' || !this.layer) return;
+    const data = buildTownMap(builtLots());
+    for (let y = 0; y < data.length; y++) {
+      for (let x = 0; x < data[y].length; x++) {
+        if (this.layer.getTileAt(x, y)?.index !== data[y][x]) this.layer.putTileAt(data[y][x], x, y);
+      }
+    }
+    // A building just went up where we're standing: step out in front of its door
+    const here = this.currentTile();
+    for (const spot of PROPERTIES) {
+      const inside =
+        here.x >= spot.x && here.x < spot.x + spot.w && here.y >= spot.y && here.y < spot.y + spot.h;
+      if (inside && data[here.y][here.x] !== T.PATH) {
+        const out = outsideDoor(spot);
+        this.player.setPosition(out.x * TILE_SIZE + TILE_SIZE / 2, out.y * TILE_SIZE + TILE_SIZE / 2);
+        this.lastTileKey = out.x + ',' + out.y;
+        this.sendPosition(true);
+      }
+    }
+    this.drawSigns();
+  }
+
+  private signText(info: PropertyInfo | undefined, kind: 'building' | 'lot'): string {
+    if (!info) return '';
+    if (!info.owner_id) return info.label + '\n' + (kind === 'lot' ? 'Lot for sale' : 'Up for claim');
+    const what = info.use === 'shop' ? 'Shop' : 'House';
+    return (info.name ?? info.label) + '\n' + what + ' · ' + (info.owner_name ?? '?');
+  }
+
+  private drawSigns(): void {
+    this.signs.forEach((t) => t.destroy());
+    this.signs = [];
+    if (this.place.kind !== 'town' || !town.loaded) return;
+    for (const spot of PROPERTIES) {
+      const info = propertyInfo(spot.id);
+      const built = spot.kind === 'building' || !!info?.owner_id;
+      const color = !info?.owner_id ? '#ffffff' : info.use === 'shop' ? '#ffd76a' : '#b8e0ff';
+      const x = (spot.x + spot.w / 2) * TILE_SIZE;
+      const y = built ? spot.y * TILE_SIZE - 4 : (spot.y + spot.h / 2) * TILE_SIZE;
+      const t = this.add
+        .text(x, y, this.signText(info, spot.kind), {
+          fontFamily: 'sans-serif',
+          fontSize: '14px',
+          color,
+          align: 'center',
+          stroke: '#000000',
+          strokeThickness: 4,
+        })
+        .setOrigin(0.5, built ? 1 : 0.5)
+        .setDepth(built ? spot.y * TILE_SIZE : 2);
+      this.signs.push(t);
+    }
+  }
+
+  // Walk in through a claimed door (the database and the server check you may)
+  private async enterProperty(id: number, out: { x: number; y: number }): Promise<void> {
+    if (this.travelling) return;
+    this.travelling = true;
+    this.player.setVelocity(0, 0);
+    cancelDecorate();
+    closePlacePanel();
+    this.registry.set('status', 'Going in...');
+    try {
+      const [me, inside] = await Promise.all([myUserId(), getProperty(id)]);
+      this.rememberTownSpot(out);
+      this.scene.restart({
+        place: { kind: 'property', id },
+        room: inside.layout,
+        mine: inside.ownerId === me,
+        ownerName: inside.ownerName,
+        propertyName: inside.name,
+        propertyUse: inside.use,
+      } satisfies PlaceData);
+    } catch (err) {
+      toast((err as Error).message);
+      this.travelling = false;
+      this.updateStatus();
+    }
   }
 
   private placeFurniture(): void {
@@ -322,7 +450,7 @@ export class TownScene extends Phaser.Scene {
 
   // Shows a different room layout (Decorate preview or after saving)
   private applyLayout(layout: RoomLayout): void {
-    if (this.place.kind !== 'home') return;
+    if (!this.isIndoors()) return;
     const templateChanged = !this.layout || this.layout.template !== layout.template;
     this.layout = layout;
     if (templateChanged) {
@@ -345,13 +473,28 @@ export class TownScene extends Phaser.Scene {
   private setupTopbar(): void {
     const placeBtn = $<HTMLButtonElement>('place-btn');
     const decorateBtn = $<HTMLButtonElement>('decorate-btn');
-    const atHome = this.place.kind === 'home';
-    placeBtn.textContent = atHome ? 'Town' : 'Home';
-    placeBtn.onclick = () => (atHome ? this.goToTown() : void this.goHome());
-    decorateBtn.style.display = atHome && this.mine ? 'inline-block' : 'none';
+    const indoors = this.isIndoors();
+    placeBtn.textContent = indoors ? 'Town' : 'Home';
+    placeBtn.onclick = () => (indoors ? this.goToTown() : void this.goHome());
+    decorateBtn.style.display = indoors && this.mine ? 'inline-block' : 'none';
     decorateBtn.onclick = () => {
       if (this.layout) openDecorate(this.layout);
     };
+
+    const storeBtn = $<HTMLButtonElement>('store-btn');
+    const manageBtn = $<HTMLButtonElement>('manage-btn');
+    const place = this.place;
+    const propertyId = place.kind === 'property' ? place.id : null;
+    storeBtn.style.display = propertyId !== null && this.propertyUse === 'shop' ? 'inline-block' : 'none';
+    manageBtn.style.display = propertyId !== null && this.mine ? 'inline-block' : 'none';
+    storeBtn.onclick = () => propertyId !== null && openStore(propertyId);
+    manageBtn.onclick = () => {
+      if (propertyId === null) return;
+      // The manage panel needs the town list (owner, name, visibility)
+      void loadTown().then(() => openManage(propertyId)).catch((err) => toast((err as Error).message));
+    };
+    // Visitors see what a shop sells as soon as they walk in
+    if (propertyId !== null && this.propertyUse === 'shop' && !this.mine) openStore(propertyId);
   }
 
   private async goHome(returnTile?: { x: number; y: number }): Promise<void> {
@@ -431,19 +574,37 @@ export class TownScene extends Phaser.Scene {
     };
   }
 
-  // Walking onto a door goes home; walking onto the doormat at home goes back to town
+  // Walking onto a door: claimed house/shop -> go in, empty one -> claim panel.
+  // Walking onto the doormat inside goes back to town.
   private checkDoors(): void {
     if (this.travelling || !this.layer) return;
     const { x, y } = this.currentTile();
+    const key = x + ',' + y;
+    const newTile = key !== this.lastTileKey;
+    this.lastTileKey = key;
     const tile = this.layer.getTileAt(x, y);
     if (!tile) return;
+
+    const spot = this.place.kind === 'town' ? propertyAtDoor(x, y) : undefined;
+    if (spot) {
+      if (!newTile) return; // only once per step onto the door
+      const info = propertyInfo(spot.id);
+      if (!town.loaded || !info) {
+        toast('Still loading the town, try again in a moment');
+      } else if (info.owner_id) {
+        void this.enterProperty(spot.id, outsideDoor(spot));
+      } else {
+        openClaim(spot.id);
+      }
+      return;
+    }
 
     if (this.place.kind === 'town' && tile.index === T.DOOR) {
       // Come back out on the walkable side of this door
       const below = this.layer.getTileAt(x, y + 1);
       const out = below && !BLOCKED_TILES.includes(below.index) ? { x, y: y + 1 } : { x, y: y - 1 };
       void this.goHome(out);
-    } else if (this.place.kind === 'home' && tile.index === T.DOORMAT) {
+    } else if (this.isIndoors() && tile.index === T.DOORMAT) {
       this.goToTown();
     }
   }
@@ -498,10 +659,17 @@ export class TownScene extends Phaser.Scene {
       });
       room.onMessage('roomChanged', () => {
         // The owner redecorated while we're visiting
-        if (!current() || this.mine || this.place.kind !== 'home') return;
-        void getRoom(this.place.owner)
-          .then(({ layout }) => this.applyLayout(layout))
-          .catch(() => undefined);
+        if (!current() || this.mine) return;
+        const place = this.place;
+        if (place.kind === 'home') {
+          void getRoom(place.owner)
+            .then(({ layout }) => this.applyLayout(layout))
+            .catch(() => undefined);
+        } else if (place.kind === 'property') {
+          void getProperty(place.id)
+            .then((p) => this.applyLayout(p.layout))
+            .catch(() => undefined);
+        }
       });
       room.onMessage('chat', (m: { id: string; text: string }) => {
         if (!current()) return;
@@ -519,7 +687,7 @@ export class TownScene extends Phaser.Scene {
         this.room = null;
         this.clearRemotes();
         if (code === REMOVED_CODE) {
-          toast(this.ownerName + ' asked you to leave their room');
+          toast(this.ownerName + ' asked you to leave');
           this.goToTown();
           return;
         }
@@ -545,7 +713,7 @@ export class TownScene extends Phaser.Scene {
         return;
       }
       const msg = (err as { message?: string }).message;
-      if (code === 403 && this.place.kind === 'home') {
+      if (code === 403 && this.isIndoors()) {
         // Not allowed in (any more): back to town
         toast(msg ?? 'You can\'t visit that room');
         this.goToTown();
@@ -592,7 +760,14 @@ export class TownScene extends Phaser.Scene {
   }
 
   private updateStatus(): void {
-    const where = this.place.kind === 'home' ? (this.mine ? 'Your room' : this.ownerName + "'s room") : 'Town';
+    const where =
+      this.place.kind === 'property'
+        ? this.propertyName + (this.mine ? ' (yours)' : '')
+        : this.place.kind === 'home'
+          ? this.mine
+            ? 'Your room'
+            : this.ownerName + "'s room"
+          : 'Town';
     this.registry.set('status', session.name + ' | ' + where + ' | Online: ' + (this.remotes.size + 1));
   }
 

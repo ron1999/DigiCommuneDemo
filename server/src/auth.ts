@@ -36,6 +36,28 @@ export async function canVisitRoom(token: string, ownerId: string): Promise<bool
   }
 }
 
+// Asks the database whether this player may go into a house or shop, and who owns it.
+// Uses the player's own login, so the database applies its own rules (guest list, bans,
+// blocks, visibility). Returns null if they may not go in (or it isn't claimed).
+export async function getPropertyOwner(token: string, propertyId: number): Promise<string | null> {
+  const url = process.env.SUPABASE_URL;
+  const anonKey = process.env.SUPABASE_ANON_KEY;
+  if (!url || !anonKey) return null;
+  try {
+    const res = await fetch(url + '/rest/v1/rpc/get_property', {
+      method: 'POST',
+      headers: { apikey: anonKey, Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_property: propertyId }),
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return null;
+    const info = (await res.json()) as { owner_id?: unknown };
+    return typeof info?.owner_id === 'string' ? info.owner_id : null;
+  } catch {
+    return null;
+  }
+}
+
 export function authConfigured(): boolean {
   return Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY);
 }

@@ -96,6 +96,7 @@ export function openShop(): void {
   cancelDecorate();
   $('pets').style.display = 'none';
   $('friends').style.display = 'none';
+  $('prop').style.display = 'none';
   errorEl.textContent = '';
   render();
   panel.style.display = 'flex';

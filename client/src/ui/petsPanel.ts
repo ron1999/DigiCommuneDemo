@@ -188,6 +188,7 @@ export function openPets(): void {
   cancelDecorate();
   $('shop').style.display = 'none';
   $('friends').style.display = 'none';
+  $('prop').style.display = 'none';
   panel.style.display = 'flex';
   render();
 }

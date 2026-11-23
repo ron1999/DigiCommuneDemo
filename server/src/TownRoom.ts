@@ -1,11 +1,12 @@
 import { Room, Client, ServerError } from 'colyseus';
-import { canVisitRoom, verifyToken, type PetInfo, type VerifiedUser } from './auth';
+import { canVisitRoom, getPropertyOwner, verifyToken, type PetInfo, type VerifiedUser } from './auth';
 import { lookup, setOffline, setOnline } from './presence';
 import { sanitizeAvatar, type Avatar } from './avatar';
 
 // Must match the client's map size (40 x 30 tiles of 64px, client/src/config.ts) and spawn point.
 const TILE = 64;
 const TOWN = { w: 40 * TILE, h: 30 * TILE, spawnX: 20 * TILE, spawnY: 15 * TILE };
+const MAX_PROPERTY_ID = 7; // must match PROPERTIES in client/src/world/properties.ts and 008_shops_homes.sql
 // Homes: big enough for the largest room template (MAX_ROOM_W/H in client/src/world/rooms.ts)
 const HOME = { w: 12 * TILE, h: 9 * TILE, spawnX: 6 * TILE, spawnY: 7 * TILE };
 
@@ -32,11 +33,14 @@ function clamp(value: number, min: number, max: number): number {
 // One class runs both kinds of place:
 //  - 'town': the shared town everyone joins
 //  - 'home': one per player (options.owner = their account id). For now only the owner may enter;
-//    visiting friends' rooms comes later.
+//    the database decides who else may visit (can_visit_room).
+//  - 'property': a claimed house or shop in town (options.property = its id). The database
+//    decides who may go in (get_property: guest list, bans, blocks, visibility) and who owns it.
 export class TownRoom extends Room {
   maxClients = 100;
 
-  private ownerId: string | null = null; // set for homes
+  private ownerId: string | null = null; // set for homes and properties
+  private propertyId: number | null = null; // set for properties
   private bounds = TOWN;
 
   private players = new Map<string, PlayerData>(); // by session id
@@ -69,7 +73,15 @@ export class TownRoom extends Room {
       console.log('Join rejected: invalid or expired login token');
       throw new ServerError(401, 'Invalid or expired login');
     }
-    if (this.ownerId && user.id !== this.ownerId && !(await canVisitRoom(token, this.ownerId))) {
+    if (this.propertyId !== null) {
+      // Also re-reads the owner, in case the place changed hands while this room was open
+      const owner = await getPropertyOwner(token, this.propertyId);
+      if (!owner) {
+        console.log('Join rejected: ' + user.username + ' may not enter property ' + this.propertyId);
+        throw new ServerError(403, 'You can\'t go in there');
+      }
+      this.ownerId = owner;
+    } else if (this.ownerId && user.id !== this.ownerId && !(await canVisitRoom(token, this.ownerId))) {
       console.log('Join rejected: ' + user.username + ' may not visit this room');
       throw new ServerError(403, 'You can\'t visit that room');
     }
@@ -104,6 +116,14 @@ export class TownRoom extends Room {
       this.ownerId = options.owner;
       this.bounds = HOME;
       this.maxClients = 20;
+    } else if (
+      Number.isInteger(options?.property) &&
+      options.property >= 0 &&
+      options.property <= MAX_PROPERTY_ID
+    ) {
+      this.propertyId = options.property;
+      this.bounds = HOME; // same room templates as homes
+      this.maxClients = 30;
     }
 
     // Client reports where it moved to (about 15 times per second while walking)
@@ -193,7 +213,11 @@ export class TownRoom extends Room {
     this.players.set(client.sessionId, player);
     this.sessionByUser.set(auth.id, client.sessionId);
     this.userBySession.set(client.sessionId, auth.id);
-    setOnline(auth.id, client.sessionId, !this.ownerId ? 'town' : auth.id === this.ownerId ? 'home' : 'visiting');
+    setOnline(
+      auth.id,
+      client.sessionId,
+      this.propertyId !== null ? 'place' : !this.ownerId ? 'town' : auth.id === this.ownerId ? 'home' : 'visiting',
+    );
     console.log(player.name + ' joined (' + this.players.size + ' online)');
   }
 

@@ -25,7 +25,7 @@ const body = $('friends-body');
 const errorText = $('friends-error');
 const closeBtn = $<HTMLButtonElement>('friends-close');
 
-export type Where = 'town' | 'home' | 'visiting' | null;
+export type Where = 'town' | 'home' | 'visiting' | 'place' | null;
 
 // The game hooks into these
 export const friendsPanel = {
@@ -45,6 +45,7 @@ const WHERE_TEXT: Record<Exclude<Where, null>, string> = {
   town: 'online · in town',
   home: 'online · in their room',
   visiting: 'online · visiting a room',
+  place: 'online · at a house or shop',
 };
 
 function button(label: string, onClick: () => Promise<void> | void, primary = false): HTMLButtonElement {
@@ -246,6 +247,7 @@ export function openFriends(): void {
   cancelDecorate();
   $('shop').style.display = 'none';
   $('pets').style.display = 'none';
+  $('prop').style.display = 'none';
   panel.style.display = 'flex';
   render();
   void Promise.all([
