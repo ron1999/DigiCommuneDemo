@@ -3,13 +3,20 @@
     "file": "world/buildings/building-0.png",
     "width": 384,
     "height": 320,
+    "frames": 8,
+    "fps": 5,
     "doorX": 192,
-    "baseY": 300
+    "baseY": 300,
+    "variants": {
+      "wisteria": "world/buildings/building-0-wisteria.png"
+    }
   },
   "1": {
     "file": "world/buildings/building-1.png",
     "width": 320,
     "height": 320,
+    "frames": 8,
+    "fps": 5,
     "doorX": 160,
     "baseY": 304
   },
@@ -17,6 +24,8 @@
     "file": "world/buildings/building-2.png",
     "width": 384,
     "height": 320,
+    "frames": 8,
+    "fps": 5,
     "doorX": 220,
     "baseY": 306
   },
@@ -24,6 +33,8 @@
     "file": "world/buildings/building-3.png",
     "width": 448,
     "height": 320,
+    "frames": 8,
+    "fps": 5,
     "doorX": 224,
     "baseY": 284
   },
@@ -31,6 +42,8 @@
     "file": "world/buildings/lot-4.png",
     "width": 320,
     "height": 320,
+    "frames": 8,
+    "fps": 5,
     "doorX": 160,
     "baseY": 298
   },
@@ -38,6 +51,8 @@
     "file": "world/buildings/lot-5.png",
     "width": 256,
     "height": 320,
+    "frames": 8,
+    "fps": 5,
     "doorX": 164,
     "baseY": 300
   },
@@ -45,6 +60,8 @@
     "file": "world/buildings/lot-6.png",
     "width": 256,
     "height": 320,
+    "frames": 8,
+    "fps": 5,
     "doorX": 122,
     "baseY": 300
   },
@@ -52,6 +69,8 @@
     "file": "world/buildings/lot-7.png",
     "width": 256,
     "height": 320,
+    "frames": 8,
+    "fps": 5,
     "doorX": 86,
     "baseY": 294
   }

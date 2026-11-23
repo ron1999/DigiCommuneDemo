@@ -1,40 +1,10 @@
 {
-  "_about": "Head items: sheets at sprites/head/<id>/<body>.png, grey pixels tint to the chosen colour. Stack after clothing, before the height stretch, by kind: neck (bandana), face (piercings, face tattoos), hair, band (headband), hat, glasses. Hats: erase hair pixels where sprites/head/<mask><body>.png is opaque, then draw the hat; hair with underHat \"tuck\" is not drawn at all under a hat. One hat, one glasses, one band, one neck; face items stack.",
+  "_about": "Head items: sheets at sprites/head/<id>/<body>.png, grey pixels tint to the chosen colour. Stack after clothing, before the height stretch, by kind: neck (bandana), hair, band (headband), hat, glasses. Hats: erase hair pixels where sprites/head/<mask><body>.png is opaque, then draw the hat; hair with underHat \"tuck\" is not drawn at all under a hat. One hat, one glasses, one band, one neck.",
   "items": [
     {
       "id": "band-bandana",
       "name": "Bandana headband",
       "kind": "band",
-      "tint": true
-    },
-    {
-      "id": "face-brow-bar",
-      "name": "Eyebrow bar",
-      "kind": "face",
-      "tint": true
-    },
-    {
-      "id": "face-ear-hoops",
-      "name": "Ear hoops",
-      "kind": "face",
-      "tint": true
-    },
-    {
-      "id": "face-lip-ring",
-      "name": "Lip ring",
-      "kind": "face",
-      "tint": true
-    },
-    {
-      "id": "face-nose-ring",
-      "name": "Nose ring",
-      "kind": "face",
-      "tint": true
-    },
-    {
-      "id": "face-tattoo-leaf",
-      "name": "Leaf tattoo",
-      "kind": "face",
       "tint": true
     },
     {

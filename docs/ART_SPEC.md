@@ -152,7 +152,7 @@ rebuilding the bodies. To add or change a tone, edit `TONES` in the script.
 near-black lines are unified to it and every silhouette edge pixel is set to it). New art
 pipelines must call `applyOutline()` too.
 
-**Head items** (hair, hats, glasses, bandanas, piercings) are drawn ONCE per gender and placed on
+**Head items** (hair, hats, glasses, bandanas) are drawn ONCE per gender and placed on
 every body by following the head (`node scripts/build-head-items.mjs <item>`):
 1. The three standing views (front, side, back) of the reference body (`male-average` /
    `female-average`) are put side by side in one 192 x 128 image (64 px per view, frame
@@ -203,7 +203,7 @@ stocky -> average, soft and muscular share a fit), about 90 generations per item
 | `shoes` | `shoes-sneakers`, `shoes-boots`, `shoes-sandals` |
 
 Stacking order in the game: body (skin-tone sheet), bottom, shoes, top, onepiece, hair,
-headwear, face accessories, then the height stretch. Tint every clothing layer like hair (grey
+headwear, glasses, then the height stretch. Tint every clothing layer like hair (grey
 pixels only; the outline colour stays as is). Known small flaws: a dark shadow patch on one side
 frame of the heavyset overalls; 2-3 skin pixels on one female-average jeans frame.
 
@@ -220,18 +220,14 @@ game in `client/public/sprites/head/items.json` (id, name, kind, tint, plus `mas
 | `glasses` | `glasses-round`, `glasses-square`, `glasses-sun` | |
 | `band` | `band-bandana` (headband) | drawn over the hair, no mask |
 | `neck` | `neck-bandana` | under the hair (long hair falls over it) |
-| `face` | `face-ear-hoops`, `face-nose-ring`, `face-lip-ring`, `face-brow-bar`, `face-tattoo-leaf` | several can be worn at once |
 
-Head stack order: neck, face, hair, band, hat, glasses. **Hats and hair:** before drawing a hat,
+Head stack order: neck, hair, band, hat, glasses. **Hats and hair:** before drawing a hat,
 erase the hair pixels where the hat's mask sheet is opaque (everything above the hat's brim), so
 big hair doesn't poke through. Hair with `"underHat": "tuck"` (the big curls) isn't drawn at all
 under a hat.
 
-Face items (piercings, face tattoos) are 1-4 pixels, so they are hand-placed as exact pixels on
-the reference heads in `scripts/make-face-items.mjs` (no PixelLab cost), then built with
-`build-head-items.mjs` (`"shades"` gives exact greys, `"outline": false` keeps them from being
-swallowed by the outline). Arm or body tattoos would need the clothing pipeline (they must follow
-the arms), about 90-180 generations per design.
+Piercings and tattoos were removed (2026-11-23, owner): at 1-4 pixels they were too hard to see
+in the game. The hand-placed versions are kept outside the repo in case they come back.
 
 Every prompt starts with the owner's words, exactly: "Please no AI slop or generic vibe. I want
 it look like if stardew valley & scott pilgrims pixel art styles had a baby, not an exact copy
@@ -347,6 +343,18 @@ road got front doors and a `walkway` (2026-11-22, `client/src/world/properties.t
 json is the middle of the door in the image; place the image so `doorX` sits on the middle of the
 door tile and `baseY` on the bottom edge of the footprint (depth = that bottom edge). Draw grass
 under a building's wall tiles (only the door and walkways are path); an unbuilt lot stays a dirt plot.
+
+**Building vines.** Each building is an 8-frame strip (`frames`, `fps` in buildings.json) whose
+hanging vines sway. Made with PixelLab `inpaint_image` (10 generations per building; image and
+mask sent as `upload:` refs from `get_upload_url`): a mask of rectangles under the eaves
+(`scripts/art-src/world/buildings/vines/rects.json`), prompt "lush, full, leafy green ivy vines
+growing out from under the roof eave...". The inpaint draws faint box lines at the mask edge, so
+only the vine-coloured pixels (greens, lavenders) plus their dark outline are lifted into
+`buildings/vines/<name>.png`; the approved building stays the base. `hangFrames` in
+`scripts/world-sway.mjs` bends each rect's vines (top fixed under the eave, bottom swings 1-2 px).
+The cottage also has a softer lavender-wisteria variant (`building-0-wisteria.png`, listed under
+`variants`). The loose vine stills (`decor/vine-ivy`, `vine-wisteria`, `vine-fringe`) are approved
+but kept for trees, fences or walls; on buildings use the inpaint method so vines fit the eaves.
 
 ## Pets (2026-11-22)
 

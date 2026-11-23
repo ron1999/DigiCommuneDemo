@@ -64,3 +64,18 @@ export function driftFrames(img, path = [[0, 0], [0, 0], [1, 0], [1, 0], [1, 1],
     return out;
   });
 }
+
+// Hanging vines on a building: a vine layer (same size as the building) bends sideways inside each
+// rect [x0, y0, x1, y1]: the top row (under the eave) stays put, the bottom swings the most.
+export function hangFrames(vines, rects, tips = [0, 1, 1, 2, 1, 1, 0, -1]) {
+  return tips.map((t) => {
+    const out = newImage(vines.width, vines.height);
+    for (let y = 0; y < vines.height; y++)
+      for (let x = 0; x < vines.width; x++) {
+        const r = rects.find(([x0, y0, x1, y1]) => x >= x0 && x <= x1 && y >= y0 && y <= y1);
+        const dx = r ? Math.round(t * ((y - r[1]) / Math.max(1, r[3] - r[1])) ** 1.5) : 0;
+        copyPx(vines, x, y, out, x + dx, y);
+      }
+    return out;
+  });
+}

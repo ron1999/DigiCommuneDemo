@@ -21,7 +21,7 @@ import { mkdirSync, readFileSync, readdirSync, writeFileSync, existsSync } from 
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readPng, newImage, writePng } from './png.mjs';
-import { swayFrames, bobFrames, driftFrames } from './world-sway.mjs';
+import { swayFrames, bobFrames, driftFrames, hangFrames } from './world-sway.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = join(ROOT, 'scripts', 'art-src', 'world');
@@ -186,19 +186,42 @@ export const BUILDINGS = [
   { id: 7, name: 'lot-7', doorX: 43 }, // garden cottage
 ];
 mkdirSync(join(OUT, 'buildings'), { recursive: true });
+// Vines: PixelLab inpaint_image painted vines into each building under its eaves (10 gens each,
+// masks = the rects in buildings/vines/rects.json); only the vine-coloured pixels were lifted out
+// into buildings/vines/<name>.png, so the building itself stays exactly as approved. Here the vine
+// layer is bent per frame (hangFrames) and drawn over the building: each building is an 8-frame strip.
+const VINE_RECTS = JSON.parse(readFileSync(join(SRC, 'buildings', 'vines', 'rects.json'), 'utf8'));
+function buildingFrames(baseName, vineName) {
+  const base = readPng(join(SRC, 'buildings', `${baseName}.png`));
+  const vineFile = join(SRC, 'buildings', 'vines', `${vineName}.png`);
+  if (!existsSync(vineFile)) return [base];
+  return hangFrames(readPng(vineFile), VINE_RECTS[vineName]).map((v) => {
+    const f = { width: base.width, height: base.height, data: new Uint8Array(base.data) };
+    for (let i = 0; i < v.data.length; i += 4) if (v.data[i + 3]) f.data.set(v.data.subarray(i, i + 4), i);
+    return f;
+  });
+}
 const bmanifest = {};
 for (const b of BUILDINGS) {
-  const img = harmonize(readPng(join(SRC, 'buildings', `${b.name}.png`)));
-  writePng(join(OUT, 'buildings', `${b.name}.png`), strip([img], SCALE));
+  const frames = buildingFrames(b.name, b.name).map(harmonize);
+  writePng(join(OUT, 'buildings', `${b.name}.png`), strip(frames, SCALE));
   bmanifest[b.id] = {
     file: `world/buildings/${b.name}.png`,
-    width: img.width * SCALE,
-    height: img.height * SCALE,
-    // Place the image's top-left at: x = doorTileCentreX - doorX, y = footprintBottomY - baseY.
+    width: frames[0].width * SCALE, // one frame
+    height: frames[0].height * SCALE,
+    frames: frames.length,
+    fps: 5,
+    // Place the frame's top-left at: x = doorTileCentreX - doorX, y = footprintBottomY - baseY.
     // Depth = footprintBottomY so players walking in front of it are drawn over it.
     doorX: b.doorX * SCALE,
-    baseY: (baseRow([img]) + 1) * SCALE,
+    baseY: (baseRow(frames) + 1) * SCALE,
   };
+}
+// The cottage also has a softer lavender-wisteria version (same size and door), not used by default.
+{
+  const frames = buildingFrames('building-0', 'building-0-wisteria').map(harmonize);
+  writePng(join(OUT, 'buildings', 'building-0-wisteria.png'), strip(frames, SCALE));
+  bmanifest[0].variants = { wisteria: 'world/buildings/building-0-wisteria.png' };
 }
 writeFileSync(join(OUT, 'buildings.json'), JSON.stringify(bmanifest, null, 2) + '\n');
 

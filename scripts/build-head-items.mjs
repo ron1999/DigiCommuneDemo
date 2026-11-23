@@ -214,7 +214,7 @@ console.log(`head/${item}: ${written.length} sheets${cfg.kind === 'hat' ? ' + ma
     });
   writeFileSync(
     join(HEAD, 'items.json'),
-    JSON.stringify({ _about: 'Head items: sheets at sprites/head/<id>/<body>.png, grey pixels tint to the chosen colour. Stack after clothing, before the height stretch, by kind: neck (bandana), face (piercings, face tattoos), hair, band (headband), hat, glasses. Hats: erase hair pixels where sprites/head/<mask><body>.png is opaque, then draw the hat; hair with underHat "tuck" is not drawn at all under a hat. One hat, one glasses, one band, one neck; face items stack.', items }, null, 2),
+    JSON.stringify({ _about: 'Head items: sheets at sprites/head/<id>/<body>.png, grey pixels tint to the chosen colour. Stack after clothing, before the height stretch, by kind: neck (bandana), hair, band (headband), hat, glasses. Hats: erase hair pixels where sprites/head/<mask><body>.png is opaque, then draw the hat; hair with underHat "tuck" is not drawn at all under a hat. One hat, one glasses, one band, one neck.', items }, null, 2),
   );
 }
 
