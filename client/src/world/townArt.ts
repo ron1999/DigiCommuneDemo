@@ -23,8 +23,10 @@ interface DecorMeta {
 }
 interface BuildingMeta {
   file: string;
-  width: number;
+  width: number; // of one frame
   height: number;
+  frames?: number; // animated: a horizontal strip of frames (vines swaying)
+  fps?: number;
   doorX: number;
   baseY: number;
 }
@@ -89,7 +91,9 @@ export function loadTownArt(scene: Phaser.Scene): Promise<boolean> {
           ...Object.entries(decor).map(([name, d]) =>
             addImage(tex, 'decor-' + name, d.file, { frameWidth: d.frameWidth, frameHeight: d.frameHeight }),
           ),
-          ...Object.entries(buildings).map(([id, b]) => addImage(tex, 'building-' + id, b.file)),
+          ...Object.entries(buildings).map(([id, b]) =>
+            addImage(tex, 'building-' + id, b.file, (b.frames ?? 1) > 1 ? { frameWidth: b.width, frameHeight: b.height } : undefined),
+          ),
         ]);
         for (const [name, d] of Object.entries(decor)) {
           if (d.frames > 1 && !scene.anims.exists('decor-' + name)) {
@@ -97,6 +101,17 @@ export function loadTownArt(scene: Phaser.Scene): Promise<boolean> {
               key: 'decor-' + name,
               frames: scene.anims.generateFrameNumbers('decor-' + name, { start: 0, end: d.frames - 1 }),
               frameRate: d.fps,
+              repeat: -1,
+            });
+          }
+        }
+        for (const [id, b] of Object.entries(buildings)) {
+          const key = 'building-' + id;
+          if ((b.frames ?? 1) > 1 && !scene.anims.exists(key)) {
+            scene.anims.create({
+              key,
+              frames: scene.anims.generateFrameNumbers(key, { start: 0, end: b.frames! - 1 }),
+              frameRate: b.fps ?? 5,
               repeat: -1,
             });
           }
@@ -164,7 +179,7 @@ const OVERLAY_DEPTH = 9000; // above the world and signs, below name tags (10000
 export class TownArt {
   private ground: Phaser.Tilemaps.Tilemap | null = null;
   private things: Phaser.GameObjects.GameObject[] = []; // decor, lights
-  private buildings: Phaser.GameObjects.Image[] = [];
+  private buildings: (Phaser.GameObjects.Image | Phaser.GameObjects.Sprite)[] = [];
   private overlay: Phaser.GameObjects.Image[] = [];
   private buildingTops = new Map<number, number>(); // place id -> y of its picture's top edge
   private onResize = () => this.sizeOverlay();
@@ -319,7 +334,15 @@ export class TownArt {
       const base = (spot.y + spot.h) * TILE_SIZE;
       const x = spot.door.x * TILE_SIZE + TILE_SIZE / 2 - b.doorX;
       const y = base - b.baseY;
-      this.buildings.push(this.scene.add.image(x, y, 'building-' + spot.id).setOrigin(0, 0).setDepth(base));
+      const key = 'building-' + spot.id;
+      if ((b.frames ?? 1) > 1) {
+        const s = this.scene.add.sprite(x, y, key, 0).setOrigin(0, 0).setDepth(base);
+        s.play(key);
+        s.anims.setProgress(hash(spot.id, 99)); // each building starts at a different point
+        this.buildings.push(s);
+      } else {
+        this.buildings.push(this.scene.add.image(x, y, key).setOrigin(0, 0).setDepth(base));
+      }
       this.buildingTops.set(spot.id, y);
     }
   }

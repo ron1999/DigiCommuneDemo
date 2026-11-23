@@ -1,5 +1,5 @@
 // IMPORTANT: these counts must match the option lists in client/src/avatar/avatar.ts
-// and the items in supabase/009_body_types.sql and 010_accessories.sql.
+// and the items in supabase/009_body_types.sql and 010_accessories.sql (012 retired the face items).
 export interface Avatar {
   preset: number; // 0 = custom (layers), 1+ = ready-made character
   gender: number;
@@ -25,8 +25,6 @@ export interface Avatar {
   bandColor: number;
   neck: number;
   neckColor: number;
-  face: number; // bit per face item (5 items)
-  faceColor: number;
 }
 
 const LIMITS: Record<keyof Avatar, number> = {
@@ -54,8 +52,6 @@ const LIMITS: Record<keyof Avatar, number> = {
   bandColor: 12,
   neck: 2,
   neckColor: 12,
-  face: 32, // any combination of the 5 face items
-  faceColor: 12,
 };
 
 export const DEFAULT_AVATAR: Avatar = {
@@ -83,8 +79,6 @@ export const DEFAULT_AVATAR: Avatar = {
   bandColor: 1,
   neck: 0,
   neckColor: 1,
-  face: 0,
-  faceColor: 9,
 };
 
 // Never trust what a client sends: keep only whole numbers inside the allowed ranges.

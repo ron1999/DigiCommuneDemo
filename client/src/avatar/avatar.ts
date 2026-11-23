@@ -30,8 +30,6 @@ export interface Avatar {
   bandColor: number;
   neck: number;
   neckColor: number;
-  face: number; // several at once: bit i set = FACE_ITEMS[i] is worn
-  faceColor: number;
 }
 
 // Ready-made characters (complete sprite sheets in client/public/sprites/presets/<file>.png).
@@ -78,8 +76,6 @@ export const BANDS = ['None', 'Bandana'];
 export const BAND_FILES = ['', 'band-bandana'];
 export const NECKS = ['None', 'Neck bandana'];
 export const NECK_FILES = ['', 'neck-bandana'];
-export const FACE_ITEMS = ['Ear hoops', 'Nose ring', 'Lip ring', 'Brow bar', 'Leaf tattoo'];
-export const FACE_FILES = ['face-ear-hoops', 'face-nose-ring', 'face-lip-ring', 'face-brow-bar', 'face-tattoo-leaf'];
 // Hair that is not drawn at all under a hat (items.json "underHat": "tuck")
 export const HAIR_TUCKED_UNDER_HAT = ['hair-curls'];
 
@@ -113,8 +109,6 @@ export const DEFAULT_AVATAR: Avatar = {
   bandColor: 1,
   neck: 0,
   neckColor: 1,
-  face: 0,
-  faceColor: 9,
 };
 
 export const AVATAR_LIMITS: Record<keyof Avatar, number> = {
@@ -142,8 +136,6 @@ export const AVATAR_LIMITS: Record<keyof Avatar, number> = {
   bandColor: CLOTH_COLORS.length,
   neck: NECKS.length,
   neckColor: CLOTH_COLORS.length,
-  face: 1 << FACE_ITEMS.length, // any combination
-  faceColor: CLOTH_COLORS.length,
 };
 
 export const AVATAR_KEYS = Object.keys(AVATAR_LIMITS) as (keyof Avatar)[];
@@ -187,8 +179,6 @@ export const CATEGORIES: Category[] = [
   { key: 'bandColor', label: 'Headband color', colors: CLOTH_COLORS, group: 'Extras', when: (a) => custom(a) && a.band > 0 },
   { key: 'neck', label: 'Neck', names: NECKS, group: 'Extras', when: custom },
   { key: 'neckColor', label: 'Neck color', colors: CLOTH_COLORS, group: 'Extras', when: (a) => custom(a) && a.neck > 0 },
-  { key: 'face', label: 'Piercings & tattoos (pick any)', names: FACE_ITEMS, multi: true, group: 'Extras', when: custom },
-  { key: 'faceColor', label: 'Piercing & tattoo color', colors: CLOTH_COLORS, group: 'Extras', when: (a) => custom(a) && a.face > 0 },
 ];
 
 // Turns anything (such as an empty or old-format database value) into a valid avatar.

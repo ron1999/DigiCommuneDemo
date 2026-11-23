@@ -16,7 +16,6 @@
 import {
   BAND_FILES,
   BOTTOM_FILES,
-  FACE_FILES,
   GLASSES_FILES,
   HAIR_TUCKED_UNDER_HAT,
   HAT_FILES,
@@ -78,9 +77,8 @@ function layerFiles(a: Avatar): Layer[] {
   clothes(SHOE_FILES[a.shoes], a.shoesColor);
   clothes(TOP_FILES[a.top], a.topColor);
   clothes(ONEPIECE_FILES[a.onepiece], a.onepieceColor);
-  // Head items: neck, face, hair, headband, hat, glasses (see sprites/head/items.json)
+  // Head items: neck, hair, headband, hat, glasses (see sprites/head/items.json)
   add(NECK_FILES[a.neck], CLOTH_COLORS[a.neckColor]);
-  FACE_FILES.forEach((f, i) => a.face & (1 << i) && add(f, CLOTH_COLORS[a.faceColor]));
   const hat = HAT_FILES[a.hat];
   const hair = HAIR_FILES[a.hairStyle];
   if (!(hat && HAIR_TUCKED_UNDER_HAT.includes(hair))) {
