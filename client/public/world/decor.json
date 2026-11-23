@@ -1,0 +1,200 @@
+{
+  "tree-oak": {
+    "file": "world/decor/tree-oak.png",
+    "frameWidth": 128,
+    "frameHeight": 192,
+    "frames": 8,
+    "fps": 6,
+    "originX": 0.5,
+    "originY": 0.927,
+    "blocks": true,
+    "glow": false
+  },
+  "tree-blossom": {
+    "file": "world/decor/tree-blossom.png",
+    "frameWidth": 128,
+    "frameHeight": 192,
+    "frames": 8,
+    "fps": 6,
+    "originX": 0.5,
+    "originY": 0.958,
+    "blocks": true,
+    "glow": false
+  },
+  "tree-willow": {
+    "file": "world/decor/tree-willow.png",
+    "frameWidth": 128,
+    "frameHeight": 192,
+    "frames": 8,
+    "fps": 6,
+    "originX": 0.5,
+    "originY": 0.917,
+    "blocks": true,
+    "glow": false
+  },
+  "tree-mushroom": {
+    "file": "world/decor/tree-mushroom.png",
+    "frameWidth": 128,
+    "frameHeight": 192,
+    "frames": 8,
+    "fps": 6,
+    "originX": 0.5,
+    "originY": 0.979,
+    "blocks": true,
+    "glow": false
+  },
+  "tree-solar": {
+    "file": "world/decor/tree-solar.png",
+    "frameWidth": 128,
+    "frameHeight": 192,
+    "frames": 8,
+    "fps": 6,
+    "originX": 0.5,
+    "originY": 0.948,
+    "blocks": true,
+    "glow": true
+  },
+  "bush-berry": {
+    "file": "world/decor/bush-berry.png",
+    "frameWidth": 96,
+    "frameHeight": 96,
+    "frames": 8,
+    "fps": 6,
+    "originX": 0.5,
+    "originY": 0.958,
+    "blocks": true,
+    "glow": false
+  },
+  "bush-hedge": {
+    "file": "world/decor/bush-hedge.png",
+    "frameWidth": 96,
+    "frameHeight": 96,
+    "frames": 8,
+    "fps": 6,
+    "originX": 0.5,
+    "originY": 0.875,
+    "blocks": true,
+    "glow": false
+  },
+  "flowers-gold": {
+    "file": "world/decor/flowers-gold.png",
+    "frameWidth": 64,
+    "frameHeight": 64,
+    "frames": 8,
+    "fps": 5,
+    "originX": 0.5,
+    "originY": 1,
+    "blocks": false,
+    "glow": false
+  },
+  "flowers-blue": {
+    "file": "world/decor/flowers-blue.png",
+    "frameWidth": 64,
+    "frameHeight": 64,
+    "frames": 8,
+    "fps": 5,
+    "originX": 0.5,
+    "originY": 0.969,
+    "blocks": false,
+    "glow": false
+  },
+  "flowers-poppy": {
+    "file": "world/decor/flowers-poppy.png",
+    "frameWidth": 64,
+    "frameHeight": 64,
+    "frames": 8,
+    "fps": 5,
+    "originX": 0.5,
+    "originY": 0.938,
+    "blocks": false,
+    "glow": false
+  },
+  "grass-tuft": {
+    "file": "world/decor/grass-tuft.png",
+    "frameWidth": 64,
+    "frameHeight": 64,
+    "frames": 8,
+    "fps": 5,
+    "originX": 0.5,
+    "originY": 1,
+    "blocks": false,
+    "glow": false
+  },
+  "fern": {
+    "file": "world/decor/fern.png",
+    "frameWidth": 64,
+    "frameHeight": 64,
+    "frames": 8,
+    "fps": 4,
+    "originX": 0.5,
+    "originY": 0.875,
+    "blocks": false,
+    "glow": false
+  },
+  "reeds": {
+    "file": "world/decor/reeds.png",
+    "frameWidth": 64,
+    "frameHeight": 96,
+    "frames": 8,
+    "fps": 5,
+    "originX": 0.5,
+    "originY": 0.854,
+    "blocks": false,
+    "glow": false
+  },
+  "mush-red": {
+    "file": "world/decor/mush-red.png",
+    "frameWidth": 64,
+    "frameHeight": 64,
+    "frames": 8,
+    "fps": 4,
+    "originX": 0.5,
+    "originY": 0.938,
+    "blocks": false,
+    "glow": false
+  },
+  "mush-glow": {
+    "file": "world/decor/mush-glow.png",
+    "frameWidth": 64,
+    "frameHeight": 64,
+    "frames": 8,
+    "fps": 4,
+    "originX": 0.5,
+    "originY": 0.906,
+    "blocks": false,
+    "glow": true
+  },
+  "lilypads": {
+    "file": "world/decor/lilypads.png",
+    "frameWidth": 64,
+    "frameHeight": 64,
+    "frames": 8,
+    "fps": 2,
+    "originX": 0.5,
+    "originY": 1,
+    "blocks": false,
+    "glow": false
+  },
+  "log-shelf": {
+    "file": "world/decor/log-shelf.png",
+    "frameWidth": 96,
+    "frameHeight": 64,
+    "frames": 1,
+    "fps": 0,
+    "originX": 0.5,
+    "originY": 0.906,
+    "blocks": true,
+    "glow": false
+  },
+  "lamp": {
+    "file": "world/decor/lamp.png",
+    "frameWidth": 64,
+    "frameHeight": 128,
+    "frames": 1,
+    "fps": 0,
+    "originX": 0.5,
+    "originY": 0.984,
+    "blocks": true,
+    "glow": true
+  }
+}

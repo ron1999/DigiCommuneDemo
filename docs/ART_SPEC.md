@@ -277,7 +277,8 @@ of whimsical foliage and mushrooms and **warm sunset lighting** as the default m
   `client/src/world/townMap.ts`; the game scales them 2x. Built by `node scripts/build-tiles.mjs`
   from the downloads in `scripts/art-src/tiles/` (four `create_topdown_tileset` sheets in standard
   mode, 1 generation each: grass/path, water/grass, wood/carpet, ceramic/wood, plaster/brick; plus
-  `create_image_pixen` 32px sprites for the tree, mushrooms, door and doormat). `tileset.ts` draws
+  `create_image_pixen` 32px sprites for the tree, mushrooms, door and doormat; since 2026-11-22
+  grass, path, water and the flower tile come from the World set below). `tileset.ts` draws
   the old code tiles first, then swaps in each tile of the PNG once it loads.
 - **Furniture**: `client/public/furniture/furniture_N.png`, one file per piece at its slot size in
   game pixels (64 per tile). Built by `node scripts/build-furniture.mjs` from
@@ -286,6 +287,126 @@ of whimsical foliage and mushrooms and **warm sunset lighting** as the default m
   hanging plant). `furniture.ts` loads them itself and falls back to the code-drawn pieces.
 - To add a piece: generate it at 64 x 64, save it as the next `frame_N.png`, add its slot to
   `SLOTS` in the script, and add it to `FURNITURE` (+ the SQL items) as usual.
+
+## World (town ground, foliage, lighting) — 2026-11-22
+
+The golden-hour solarpunk town set. Built by `node scripts/build-world.mjs` (then
+`node scripts/build-tiles.mjs`, which takes its plain grass / path / water / flower tiles from it).
+
+**Prompts.** Every PixelLab prompt starts with the owner's sentence, word for word:
+"Please no AI slop or generic vibe. I want it look like if stardew valley & scott pilgrims pixel art
+styles had a baby, not an exact copy of either." then "Studio Ghibli film mood" (approved as a
+general mood reference only), then the piece, "golden-hour sunset light from the upper left", warm
+gold highlights, deep teal-green / lavender shadows, "dark brown outline", and for sprites
+"no ground under it, transparent background". **Show the owner one still of each piece and get
+approval before animating it.**
+
+**Scale.** Drawn at 32 px per tile and scaled 2x with nearest-neighbour (64 px game tiles), like
+the old tiles. The build writes everything already at 2x.
+
+**Ground** (`client/public/world/terrain/`): two corner (Wang) autotile sheets, 4 x 4 tiles of 64 px,
+`create_topdown_tileset` **pro** mode at 32 px (15 generations each) with a fixed 26-colour
+"golden hour meadow" palette: `grass-path` (path lower, grass upper) and `water-grass` (water lower,
+the *same* grass upper via `upper_base_tile_id`, with a low mossy bank). Each `.json` maps a corner
+key to a sheet frame: key = corners NW, NE, SW, SE as 4 digits, 1 = grass, 0 = path/water
+(`"1111"` plain grass, `"0000"` plain path/water). Use them as a **dual grid**: draw one ground tile
+on every tile *corner* (offset half a tile), whose 4 corners are the 4 map tiles around that corner.
+Edges then land exactly on tile borders. Treat wall/door/lot tiles as path (dirt under buildings).
+
+**Decor** (`client/public/world/decor/<name>.png` + `world/decor.json`): one horizontal strip of
+frames per piece; `decor.json` lists `frameWidth`, `frameHeight`, `frames`, `fps`, `originX/Y`
+(put the origin there and the sprite at the tile's bottom-centre, depth = y), `blocks`, `glow`.
+
+| Pieces | Size (1x) | Animation |
+|---|---|---|
+| tree-oak, tree-blossom, tree-willow, tree-mushroom, tree-solar (lantern tree) | 64 x 96 | PixelLab `animate_object` v3, 8 frames, end frame = the still so the loop closes (1 gen each) |
+| bush-berry, bush-hedge | 48 x 48 | same (1 gen each) |
+| flowers-gold, flowers-blue, flowers-poppy, grass-tuft, fern, reeds | 32 x 32/48 | free: `swayFrames` in `scripts/world-sway.mjs` (bends the top more than the base, whole pixels) |
+| mush-red, mush-glow | 32 x 32 | free: `bobFrames` (1 px cap bob) |
+| lilypads | 32 x 32 | free: `driftFrames` (slow 1 px drift) |
+| log-shelf, lamp | 48 x 32, 32 x 64 | static (the lamp and glow mushrooms get light from the overlay) |
+
+Sources: `scripts/art-src/world/terrain/`, `decor/<name>.png` (stills) and `decor/<name>/00-07.png`
+(PixelLab loops); first tries that were redone are in `rejected/`. The build maps every decor pixel
+to the nearest colour of the approved palette (ground sheets + the first test pieces) so all pieces
+share one warm palette. To add a piece: generate the still with the prompt rules above, get it
+approved, add it to `DECOR` in `scripts/build-world.mjs`, animate (AI or free), rebuild.
+
+**Lighting.** Colours are warm already (palette); the golden-hour mood is finished in Phaser with a
+light overlay, not baked in: a warm MULTIPLY tint (about `#FFF0D8`), a soft ADD sun glow from the
+upper left, a dusky purple vignette, and soft additive light pools on `glow` pieces (lamps, glow
+mushrooms, the lantern tree). Mock-up: `scripts/art-src/world/preview/town-preview.png`.
+
+**Buildings** (`client/public/world/buildings/<name>.png` + `world/buildings.json`, keyed by
+property id): one `create_map_object` sprite per place, sized to its footprint at 1x (e.g. 6 x 5
+tiles = 192 x 160), "seen from the front and slightly above" (some came out angled; the owner is
+fine with that). building-0 cottage, 1 greenhouse tea house, 2 bakery workshop, 3 community hall;
+lots once built: 4 hill home, 5 townhouse, 6 mushroom house, 7 garden cottage (128 x 160, its roof
+rises a tile above its 4 x 4 lot). Every door is in the front (bottom) wall: places south of the
+road got front doors and a `walkway` (2026-11-22, `client/src/world/properties.ts`). `doorX` in the
+json is the middle of the door in the image; place the image so `doorX` sits on the middle of the
+door tile and `baseY` on the bottom edge of the footprint (depth = that bottom edge). Draw grass
+under a building's wall tiles (only the door and walkways are path); an unbuilt lot stays a dirt plot.
+
+## Pets (2026-11-22)
+
+Cats and dogs for now; built so lizards and other animals slot in without changing any code.
+
+**Look (approved by the owner):** small and simple, like classic cute pixel pets: few flat
+colours, simple 2-tone shading, a big head, a clear silhouette, a thick clean outline, little dot
+eyes, no texture noise. NOT the detailed 64 px style (the owner called that AI slop).
+
+**Sheets:** `client/public/sprites/pets/<sheet>.png`, **240 x 192: 48 x 48 frames, 5 columns x 4
+rows**, the same layout as the characters (rows down/left/right/up, col 0 standing + 4 walk
+frames; right = left mirrored). Feet on **y = 45**, centered at x = 24. Drawn at **1x** in the game
+(same pixel size as the characters), so a cat is about knee-to-thigh height next to a player.
+Full colour, not tinted. Walk plays at 8 fps like the player.
+
+| Sheet | Animal | How it's made |
+|---|---|---|
+| `cat-tabby.png` | cat, orange tabby | PixelLab (base cat) |
+| `cat-silver.png` | cat, silver tabby | recolour of cat-tabby |
+| `cat-cocoa.png` | cat, cocoa tabby | recolour of cat-tabby |
+| `cat-black.png` | cat, black, yellow-green eyes | recolour of cat-tabby (+ eyes painted at `TABBY_EYES`) |
+| `dog-corgi.png` | dog, ginger corgi type | PixelLab (base dog) |
+| `dog-beagle.png` | dog, floppy-eared beagle type | PixelLab |
+| `dog-mutt.png` | dog, fluffy cream mutt | PixelLab |
+
+**Build:** `node scripts/build-pets.mjs`. It reads every folder in `scripts/art-src/pets/<sheet>/`
+(PixelLab character export: `rotations/` = 8 standing views for reference,
+`animations/walk4/<south|west|north>/frame_00N.png`; a side walk saved as `east/` instead of
+`west/` is mirrored, for when PixelLab's west view turns the head away but its east view is fine),
+places each direction with the feet on
+y = 45, picks the walk frame with the legs closest together as the standing frame, removes
+specks, applies the shared outline `#1B110A`, and then writes the recoloured coats listed in
+`COATS` at the top of the script (the orange fur is recoloured by brightness; outline, eyes,
+white patches and pink ears/nose stay). A recolour is free. Dark coats need the extra options
+(`white`, `lines`, `pinkBelow`, `eyes`): the black cat repaints its eyes yellow-green at the
+tabby's eye pixels (`TABBY_EYES`, checked by hand per frame), since dark eyes vanish in black fur.
+If the tabby's source frames are ever regenerated, re-check `TABBY_EYES`.
+
+**How a new base animal is made (about 8-15 generations):**
+1. `create_character_pro_flash`, `template_id` cat/dog (bear/horse/lion also exist; for a lizard
+   use `custom` and animate with `mode: "v3"`), **48 x 48**, `max_colors` 12, prompt = the owner's
+   opening line + "simple clean small pixel art ..., standing on all four legs, clear readable
+   silhouette, big round head, only a few flat colours with simple 2-tone shading, small cute dot
+   eyes, thick clean dark outline, no texture noise, no dithering". For a matching set pass the
+   tabby's (cats) or corgi's (dogs) south view as `style_image` (6 gens).
+2. Check the side views: PixelLab often turns the head away or leaves the eye out. Cheapest fix:
+   if the east view is good, animate east instead of west (the script mirrors it; the mutt). Else re-turn the front view with `first_frame_url` + another `seed` (1 gen each). If the side view
+   still isn't right, `edit_image_pro_flash` the side view (5 gens) and animate the side walk from
+   it with `animate_character` `mode: "v3"`, `custom_start_frame_url`, 4 frames (1 gen). That's how
+   the tabby's side walk was made (`scripts/art-src/pets/cat-tabby/side-edited.png`).
+3. `animate_character` `template_animation_id: "walk-4-frames"` for south, west, north (1 gen
+   each). Check every frame at 8x: tails that come and go and drifting eyes are common. The
+   tabby's back walk and the mutt's back walk are v3 redos (`mode:
+   "v3"`, 4 frames, `keep_first_frame: false`, e.g. "tail held up the whole time"); the corgi's
+   front-walk eyes and a pink rump speck were fixed by hand in its source frames.
+4. Download `/mcp/characters/<id>/download`, copy `Idle/rotations` and `Idle/animations/walk4`
+   into `scripts/art-src/pets/<family>-<coat>/`, run the script.
+
+PixelLab ids: tabby `29b77d33-895c-43c8-89b3-75010d8ebb1b`, corgi `c0d4a263-2fd7-4306-958d-d5602e908395`, beagle
+`39a99824-b919-4a32-bc42-63712e9c916f`, mutt `21e1b3e5-78c1-4e6a-9c81-7b0b5a32c424`.
 
 ## Keep it original
 

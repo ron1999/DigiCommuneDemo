@@ -73,7 +73,7 @@ function startGame(): void {
 }
 
 function createGame(): void {
-  new Phaser.Game({
+  const game = new Phaser.Game({
     type: Phaser.AUTO,
     parent: 'game',
     backgroundColor: '#1d2b1d',
@@ -89,6 +89,8 @@ function createGame(): void {
     input: { activePointers: 3 },
     scene: [TownScene, UIScene],
   });
+  // Development only: lets the browser console (and Claude's checks) look inside the game
+  if (import.meta.env.DEV) (window as unknown as { __dcGame?: Phaser.Game }).__dcGame = game;
 }
 
 async function enterGame(profile: Profile): Promise<void> {

@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import type { Room } from 'colyseus.js';
 import { CAMERA_ZOOM, MAP_H, MAP_W, PLAYER_SPEED, TILE_SIZE } from '../config';
 import { BLOCKED_TILES, SPAWN, T, buildTownMap } from '../world/townMap';
+import { TownArt, loadTownArt } from '../world/townArt';
 import { createTilesetTexture } from '../world/tileset';
 import { createFurnitureTextures, furnitureTextureKey } from '../world/furniture';
 import {
@@ -83,6 +84,7 @@ export class TownScene extends Phaser.Scene {
 
   private map: Phaser.Tilemaps.Tilemap | null = null;
   private layer: Phaser.Tilemaps.TilemapLayer | null = null;
+  private townArt: TownArt | null = null; // the town's ground, trees, buildings and light
   private furniture: Phaser.Physics.Arcade.StaticGroup | null = null; // furniture you bump into
   private decor: Phaser.GameObjects.Image[] = []; // rugs and wall art (no collision)
   private colliders: Phaser.Physics.Arcade.Collider[] = [];
@@ -132,6 +134,7 @@ export class TownScene extends Phaser.Scene {
     this.facing = 'down';
     this.map = null;
     this.layer = null;
+    this.townArt = null;
     this.furniture = null;
     this.decor = [];
     this.colliders = [];
@@ -239,6 +242,8 @@ export class TownScene extends Phaser.Scene {
     document.addEventListener('visibilitychange', this.onVisible);
 
     this.events.once('shutdown', () => {
+      this.townArt?.destroy();
+      this.townArt = null;
       this.shuttingDown = true;
       document.removeEventListener('visibilitychange', this.onVisible);
       chat.onFocusChange = null;
@@ -311,6 +316,8 @@ export class TownScene extends Phaser.Scene {
     this.colliders = [];
     this.layer?.destroy();
     this.map?.destroy();
+    this.townArt?.destroy();
+    this.townArt = null;
     this.clearFurniture();
 
     const isHome = this.isIndoors() && this.layout;
@@ -339,7 +346,22 @@ export class TownScene extends Phaser.Scene {
 
     this.colliders.push(this.physics.add.collider(this.player, this.layer));
     this.colliders.push(this.physics.add.collider(this.player, this.furniture));
-    if (!template) this.drawSigns();
+    if (!template) {
+      this.drawSigns();
+      this.showTownArt(data);
+    }
+  }
+
+  // Swap the plain tiles for the town art once it has loaded (the tiles stay for collision)
+  private showTownArt(data: number[][]): void {
+    const art = new TownArt(this);
+    this.townArt = art;
+    void loadTownArt(this).then((ok) => {
+      if (!ok || this.townArt !== art || !this.layer) return;
+      art.build(data, builtLots());
+      this.layer.setVisible(false);
+      this.drawSigns();
+    });
   }
 
   // ---------- houses and shops in town ----------
@@ -353,6 +375,7 @@ export class TownScene extends Phaser.Scene {
         if (this.layer.getTileAt(x, y)?.index !== data[y][x]) this.layer.putTileAt(data[y][x], x, y);
       }
     }
+    this.townArt?.refresh(data, builtLots());
     // A building just went up where we're standing: step out in front of its door
     const here = this.currentTile();
     for (const spot of PROPERTIES) {
@@ -384,7 +407,9 @@ export class TownScene extends Phaser.Scene {
       const built = spot.kind === 'building' || !!info?.owner_id;
       const color = !info?.owner_id ? '#ffffff' : info.use === 'shop' ? '#ffd76a' : '#b8e0ff';
       const x = (spot.x + spot.w / 2) * TILE_SIZE;
-      const y = built ? spot.y * TILE_SIZE - 4 : (spot.y + spot.h / 2) * TILE_SIZE;
+      // Over a building picture, the sign floats just above its roof (pictures can be taller than the spot)
+      const picTop = built ? this.townArt?.signY(spot) : undefined;
+      const y = built ? (picTop ?? spot.y * TILE_SIZE) - 4 : (spot.y + spot.h / 2) * TILE_SIZE;
       const t = this.add
         .text(x, y, this.signText(info, spot.kind), {
           fontFamily: 'sans-serif',
@@ -395,7 +420,7 @@ export class TownScene extends Phaser.Scene {
           strokeThickness: 4,
         })
         .setOrigin(0.5, built ? 1 : 0.5)
-        .setDepth(built ? spot.y * TILE_SIZE : 2);
+        .setDepth(built ? (spot.y + spot.h) * TILE_SIZE + 1 : 2);
       this.signs.push(t);
     }
   }

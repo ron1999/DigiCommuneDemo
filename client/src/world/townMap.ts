@@ -1,5 +1,5 @@
 import { MAP_H, MAP_W } from '../config';
-import { PROPERTIES } from './properties';
+import { PROPERTIES, outsideDoor } from './properties';
 
 // Tile indexes. They match the order of tiles drawn in tileset.ts.
 export const T = {
@@ -90,6 +90,17 @@ export function buildTownMap(builtLots: ReadonlySet<number> = new Set()): number
       for (let yy = doorY + 1; yy <= 13; yy++) d[yy][doorX] = T.PATH;
     }
   };
+  // A footpath through the given corners, in straight lines (from the tile in front of the door)
+  const walkway = (points: { x: number; y: number }[]) => {
+    for (let i = 1; i < points.length; i++) {
+      const a = points[i - 1], b = points[i];
+      const sx = Math.sign(b.x - a.x), sy = Math.sign(b.y - a.y);
+      for (let x = a.x, y = a.y; ; x += sx, y += sy) {
+        d[y][x] = T.PATH;
+        if (x === b.x && y === b.y) break;
+      }
+    }
+  };
 
   for (const p of PROPERTIES) {
     const built = p.kind === 'building' || builtLots.has(p.id);
@@ -97,7 +108,8 @@ export function buildTownMap(builtLots: ReadonlySet<number> = new Set()): number
       for (let xx = p.x; xx < p.x + p.w; xx++) d[yy][xx] = built ? T.WALL : T.PATH;
     }
     if (built) d[p.door.y][p.door.x] = T.DOOR;
-    pathToRoad(p.door.x, p.door.y, p.doorOnTop);
+    if (p.walkway) walkway([outsideDoor(p), ...p.walkway]);
+    else pathToRoad(p.door.x, p.door.y, p.doorOnTop);
   }
 
   return d;

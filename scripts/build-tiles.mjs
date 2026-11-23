@@ -4,16 +4,17 @@
 //
 //   node scripts/build-tiles.mjs
 //
+// Run `node scripts/build-world.mjs` first: grass, path, water and the flower tile now come from the
+// golden-hour world set (scripts/art-src/world/). The older sources below are still used for the rest.
 // Sources (PixelLab, 2026-11-21, prompts name Stardew Valley x Scott Pilgrim as the style):
-//   grass-path.png  topdown tileset (path lower / grass upper), 4x4 Wang sheet
-//   water.png       topdown tileset (water lower / same grass upper)
+//   grass-path.png, water.png  (no longer used: replaced by the world terrain sets)
 //   floors.png      topdown tileset (wood lower / leafy carpet upper)
 //   ceramic.png     topdown tileset (checkered ceramic lower / same wood upper)
 //   walls.png       topdown tileset (cream plaster lower / mossy brick upper)
 //   tree.png, mushrooms.png, doormat.png  32px sprites (transparent), door.png 32px tile
 // In every 4x4 Wang sheet the all-lower tile is at (64,32) and the all-upper tile at (0,96).
 
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readPng, newImage, writePng } from './png.mjs';
@@ -131,10 +132,24 @@ function dropSpecks(img) {
   return out;
 }
 
-const grassPath = src('grass-path.png');
-const grass = crop(grassPath, UPPER);
-const path = crop(grassPath, LOWER);
-const water = crop(src('water.png'), LOWER);
+// Ground (2026-11-22 golden-hour set, see scripts/build-world.mjs): plain grass / path / water tiles
+// come from the world terrain sheets, picked by their corners ("1111" = all grass, "0000" = all lower).
+const WORLD = join(ROOT, 'scripts', 'art-src', 'world', 'terrain');
+const terrainTile = (set, key) => {
+  const sheet = readPng(join(WORLD, `${set}.png`));
+  const meta = JSON.parse(readFileSync(join(WORLD, `${set}.json`), 'utf8'));
+  const t = meta.tileset_data.tiles.find((t) => ['NW', 'NE', 'SW', 'SE'].map((k) => (t.corners[k] === 'upper' ? 1 : 0)).join('') === key);
+  return crop(sheet, [t.bounding_box.x, t.bounding_box.y]);
+};
+const grass = terrainTile('grass-path', '1111');
+const path = terrainTile('grass-path', '0000');
+const water = terrainTile('water-grass', '0000');
+const flowers = readPng(join(ROOT, 'client', 'public', 'world', 'decor', 'flowers-gold.png')); // built at 2x
+const flowerSprite = newImage(S, S);
+for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
+  const i = ((y * 2) * flowers.width + x * 2) * 4; // first frame, back to 1x
+  flowerSprite.data.set(flowers.data.subarray(i, i + 4), (y * S + x) * 4);
+}
 const floors = src('floors.png');
 const wood = crop(floors, LOWER);
 const carpet = crop(floors, UPPER);
@@ -159,7 +174,7 @@ const tiles = [
   over(grass, centerBlob(src('tree.png'), [6, 0, 26, 31])), // 3 TREE
   brick, // 4 WALL
   src('door.png'), // 5 DOOR
-  over(grass, dropSpecks(mushroomsOnly(src('mushrooms.png')))), // 6 FLOWER (mushrooms + flowers)
+  over(grass, flowerSprite), // 6 FLOWER (golden-hour wildflowers; run build-world.mjs first)
   wood, // 7 FLOOR_WOOD
   tileFloor, // 8 FLOOR_TILE
   carpet, // 9 FLOOR_CARPET

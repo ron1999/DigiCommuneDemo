@@ -1,0 +1,58 @@
+{
+  "0": {
+    "file": "world/buildings/building-0.png",
+    "width": 384,
+    "height": 320,
+    "doorX": 192,
+    "baseY": 300
+  },
+  "1": {
+    "file": "world/buildings/building-1.png",
+    "width": 320,
+    "height": 320,
+    "doorX": 160,
+    "baseY": 304
+  },
+  "2": {
+    "file": "world/buildings/building-2.png",
+    "width": 384,
+    "height": 320,
+    "doorX": 220,
+    "baseY": 306
+  },
+  "3": {
+    "file": "world/buildings/building-3.png",
+    "width": 448,
+    "height": 320,
+    "doorX": 224,
+    "baseY": 284
+  },
+  "4": {
+    "file": "world/buildings/lot-4.png",
+    "width": 320,
+    "height": 320,
+    "doorX": 160,
+    "baseY": 298
+  },
+  "5": {
+    "file": "world/buildings/lot-5.png",
+    "width": 256,
+    "height": 320,
+    "doorX": 164,
+    "baseY": 300
+  },
+  "6": {
+    "file": "world/buildings/lot-6.png",
+    "width": 256,
+    "height": 320,
+    "doorX": 122,
+    "baseY": 300
+  },
+  "7": {
+    "file": "world/buildings/lot-7.png",
+    "width": 256,
+    "height": 320,
+    "doorX": 86,
+    "baseY": 294
+  }
+}
